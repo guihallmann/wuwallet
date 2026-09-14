@@ -11,7 +11,6 @@ export default function ConfirmPassword() {
         <>
             <Head title="Confirm password" />
 
-
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
