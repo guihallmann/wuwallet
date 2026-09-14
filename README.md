@@ -18,46 +18,54 @@ macOS and Linux users can run the same commands from a terminal with Docker runn
 
 1. Clone the repository and enter it:
 
-   ```bash
-   git clone <repository-url> wuwallet
-   cd wuwallet
-   ```
+    ```bash
+    git clone <repository-url> wuwallet
+    cd wuwallet
+    ```
 
 2. Install the PHP dependencies. This bootstrap command uses Docker, so local PHP and Composer are not required:
 
-   ```bash
-   docker run --rm \
-     -u "$(id -u):$(id -g)" \
-     -v "$PWD:/app" \
-     -w /app \
-     composer:2 composer install
-   ```
+    ```bash
+    docker run --rm \
+      -u "$(id -u):$(id -g)" \
+      -v "$PWD:/app" \
+      -w /app \
+      composer:2 composer install
+    ```
 
 3. Create the local environment file:
 
-   ```bash
-   cp .env.example .env
-   ```
+    ```bash
+    cp .env.example .env
+    ```
 
-   If your WSL user does not use UID/GID `1000`, update `WWWUSER` and `WWWGROUP` in `.env` to the values printed by `id -u` and `id -g`.
+    If your WSL user does not use UID/GID `1000`, update `WWWUSER` and `WWWGROUP` in `.env` to the values printed by `id -u` and `id -g`.
 
 4. Build and start Sail in the background:
 
-   ```bash
-   ./vendor/bin/sail build
-   ./vendor/bin/sail up -d
-   ```
+    ```bash
+    ./vendor/bin/sail build
+    ./vendor/bin/sail up -d
+    ```
 
 5. Generate the application key, create the SQLite database, and build the frontend:
 
-   ```bash
-   ./vendor/bin/sail artisan key:generate
-   ./vendor/bin/sail artisan migrate --seed
-   ./vendor/bin/sail npm install
-   ./vendor/bin/sail npm run build
-   ```
+    ```bash
+    ./vendor/bin/sail artisan key:generate
+    ./vendor/bin/sail artisan migrate --seed
+    ./vendor/bin/sail npm install
+    ./vendor/bin/sail npm run build
+    ```
 
-6. Open [http://localhost:8000](http://localhost:8000).
+6. In a second terminal, start the frontend development server:
+
+    ```bash
+    ./vendor/bin/sail npm run dev -- --host 0.0.0.0
+    ```
+
+    Leave this command running while developing. It provides frontend hot reload.
+
+7. Open [http://localhost:8000](http://localhost:8000).
 
 The seeded test account is `test@example.com` with the password `password`.
 
