@@ -10,7 +10,7 @@ export default function UsersIndex() {
             <div className="space-y-6">
                 <Heading
                     variant="small"
-                    title="Users"
+                    title="Clientes"
                     description="Manage application users"
                 />
             </div>
@@ -21,7 +21,7 @@ export default function UsersIndex() {
 UsersIndex.layout = {
     breadcrumbs: [
         {
-            title: 'Users',
+            title: 'Clientes',
             href: users.index(),
         },
     ],
