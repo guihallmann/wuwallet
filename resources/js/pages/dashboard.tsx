@@ -3,6 +3,7 @@ import {
     Bell,
     ChevronLeft,
     ChevronRight,
+    Minus,
     Plus,
     Search,
     Users,
@@ -29,7 +30,7 @@ const summaryCards = [
         icon: Users,
     },
     {
-        label: 'Alertas de reabalancement',
+        label: 'Alertas de rebalancemento',
         value: '3 Pendentes',
         detail: 'Requer atenção do assessor',
         tone: 'amber',
@@ -129,6 +130,10 @@ export default function Dashboard() {
                     <Button className="bg-[#2d6df6] text-white hover:bg-[#245ee0]">
                         <Plus className="mr-2 h-4 w-4" />
                         Vincular Novo Cliente
+                    </Button>
+                    <Button className="bg-[#2d6df6] text-white hover:bg-[#245ee0]">
+                        <Minus className="mr-2 h-4 w-4" />
+                        Desvincular Cliente
                     </Button>
                 </div>
 
@@ -249,6 +254,7 @@ export default function Dashboard() {
                                             >
                                                 Visualizar Carteira
                                             </Button>
+                                            
                                         </td>
                                     </tr>
                                 ))}
