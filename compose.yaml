@@ -21,7 +21,17 @@ services:
             - '.:/var/www/html'
         networks:
             - sail
-        depends_on: {}
+        depends_on:
+            - mailhog
+
+    mailhog:
+        image: 'mailhog/mailhog:latest'
+        ports:
+            - '${MAILHOG_UI_PORT:-8025}:8025'
+            - '${MAILHOG_SMTP_PORT:-1025}:1025'
+        networks:
+            - sail
+
 networks:
     sail:
         driver: bridge
