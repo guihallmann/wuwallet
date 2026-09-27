@@ -24,6 +24,12 @@ class UpdateUserRequest extends FormRequest
         $this->merge([
             'active' => $this->boolean('active'),
         ]);
+
+        if ($this->has('cpf')) {
+            $this->merge([
+                'cpf' => preg_replace('/\D+/', '', (string) $this->input('cpf')),
+            ]);
+        }
     }
 
     /**
@@ -33,10 +39,11 @@ class UpdateUserRequest extends FormRequest
     {
         $model = $this->route('user');
         $userId = $model instanceof User ? $model->getKey() : null;
+        $cpfRequired = $model instanceof User && $model->isClient();
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'tax_id' => ['required', 'string', 'size:11', 'regex:/^[0-9]{11}$/', Rule::unique('users', 'tax_id')->ignore($userId)],
+            'cpf' => [$cpfRequired ? 'required' : 'nullable', 'string', 'size:11', 'cpf', Rule::unique('users', 'cpf')->ignore($userId)],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'password' => ['nullable', 'string', Password::default(), 'confirmed'],
             'active' => ['boolean'],

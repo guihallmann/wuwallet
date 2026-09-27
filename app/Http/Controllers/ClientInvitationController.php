@@ -91,7 +91,7 @@ class ClientInvitationController extends Controller
             'manager_id' => $analyst->getKey(),
             'role' => UserRole::CLIENT,
             'name' => $request->validated('name'),
-            'tax_id' => $request->validated('tax_id'),
+            'cpf' => $request->validated('cpf'),
             'email' => $email,
             'password' => Hash::make($request->validated('password')),
             'email_verified_at' => now(),

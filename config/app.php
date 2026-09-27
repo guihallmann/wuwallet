@@ -88,7 +88,7 @@ return [
 
     'manager_master_name' => env('MANAGER_MASTER_NAME', 'Manager Master'),
 
-    'manager_master_tax_id' => env('MANAGER_MASTER_TAX_ID', '00000000000'),
+    'manager_master_cpf' => env('MANAGER_MASTER_CPF', '00000000000'),
 
     'manager_master_password' => env('MANAGER_MASTER_PASSWORD', 'password'),
 

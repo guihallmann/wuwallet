@@ -20,7 +20,7 @@ class ClientRegistrationService
             'manager_id' => $analystId,
             'role' => UserRole::CLIENT,
             'name' => (string) $data['nome'],
-            'tax_id' => (string) $data['cpf'],
+            'cpf' => (string) $data['cpf'],
             'email' => $email,
             'password' => Hash::make((string) $data['password']),
             'email_verified_at' => now(),

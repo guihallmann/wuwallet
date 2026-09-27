@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignUuid('manager_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('role');
             $table->string('name');
-            $table->string('tax_id', 11)->unique();
+            $table->string('cpf', 11)->nullable()->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Concerns\PasswordValidationRules;
+use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -22,6 +23,12 @@ class StoreUserRequest extends FormRequest
         $this->merge([
             'active' => $this->boolean('active'),
         ]);
+
+        if ($this->has('cpf')) {
+            $this->merge([
+                'cpf' => preg_replace('/\D+/', '', (string) $this->input('cpf')),
+            ]);
+        }
     }
 
     /**
@@ -29,12 +36,25 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
+        $cpfRequired = $this->managedRole() === UserRole::CLIENT;
+
         return [
             'name' => ['required', 'string', 'max:255'],
-            'tax_id' => ['required', 'string', 'size:11', 'regex:/^[0-9]{11}$/', 'unique:users,tax_id'],
+            'cpf' => [$cpfRequired ? 'required' : 'nullable', 'string', 'size:11', 'cpf', 'unique:users,cpf'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => $this->passwordRules(),
             'active' => ['boolean'],
         ];
+    }
+
+    private function managedRole(): ?UserRole
+    {
+        $manager = $this->user();
+
+        if (! $manager instanceof User) {
+            return null;
+        }
+
+        return $manager->isManager() ? UserRole::ANALYST : UserRole::CLIENT;
     }
 }

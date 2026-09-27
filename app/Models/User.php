@@ -43,7 +43,7 @@ class User extends Authenticatable
         'manager_id',
         'role',
         'name',
-        'tax_id',
+        'cpf',
         'email',
         'email_verified_at',
         'password',

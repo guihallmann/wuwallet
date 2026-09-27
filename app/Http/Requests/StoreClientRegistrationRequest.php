@@ -35,7 +35,7 @@ class StoreClientRegistrationRequest extends FormRequest
     {
         return [
             'nome' => ['required', 'string', 'max:255'],
-            'cpf' => ['required', 'string', 'size:11', 'regex:/^\d{11}$/', 'unique:users,tax_id'],
+            'cpf' => ['required', 'string', 'size:11', 'cpf', 'unique:users,cpf'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
@@ -52,7 +52,7 @@ class StoreClientRegistrationRequest extends FormRequest
             'cpf.required' => 'O campo CPF é obrigatório.',
             'cpf.string' => 'O campo CPF deve conter apenas números.',
             'cpf.size' => 'O CPF deve conter 11 dígitos.',
-            'cpf.regex' => 'O CPF deve conter apenas números.',
+            'cpf.cpf' => 'O CPF informado não é válido.',
             'cpf.unique' => 'Este CPF já está em uso.',
             'password.required' => 'O campo senha é obrigatório.',
             'password.string' => 'A senha deve conter texto válido.',

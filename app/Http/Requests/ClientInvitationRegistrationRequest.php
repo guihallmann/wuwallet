@@ -21,6 +21,12 @@ class ClientInvitationRegistrationRequest extends FormRequest
         if ($email !== '') {
             $this->merge(['email' => $email]);
         }
+
+        if ($this->has('cpf')) {
+            $this->merge([
+                'cpf' => preg_replace('/\D+/', '', (string) $this->input('cpf')),
+            ]);
+        }
     }
 
     /**
@@ -30,7 +36,7 @@ class ClientInvitationRegistrationRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'tax_id' => ['required', 'string', 'size:11', 'regex:/^[0-9]{11}$/', 'unique:users,tax_id'],
+            'cpf' => ['required', 'string', 'size:11', 'cpf', 'unique:users,cpf'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', Password::defaults(), 'confirmed'],
         ];

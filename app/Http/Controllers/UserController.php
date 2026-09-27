@@ -25,7 +25,7 @@ class UserController extends Controller
 
         $users = ($manager->isManager() ? $manager->analysts() : $manager->clients())
             ->orderBy('name')
-            ->get(['id', 'name', 'email', 'tax_id', 'active']);
+            ->get(['id', 'name', 'email', 'cpf', 'active']);
 
         return Inertia::render('users/index', [
             'users' => $users,
@@ -50,7 +50,7 @@ class UserController extends Controller
             'manager_id' => $manager->getKey(),
             'role' => $this->managedRole($manager),
             'name' => $request->validated('name'),
-            'tax_id' => $request->validated('tax_id'),
+            'cpf' => $request->validated('cpf'),
             'email' => $request->validated('email'),
             'password' => Hash::make((string) $request->validated('password')),
             'active' => $request->boolean('active'),
@@ -67,7 +67,8 @@ class UserController extends Controller
         Gate::authorize('update', $user);
 
         return Inertia::render('users/edit', [
-            'user' => $user->only(['id', 'name', 'email', 'tax_id', 'active']),
+            'user' => $user->only(['id', 'name', 'email', 'cpf', 'active']),
+            'managedRole' => $user->role->value,
         ]);
     }
 
@@ -75,7 +76,7 @@ class UserController extends Controller
     {
         $user->fill([
             'name' => $request->validated('name'),
-            'tax_id' => $request->validated('tax_id'),
+            'cpf' => $request->validated('cpf'),
             'email' => $request->validated('email'),
             'active' => $request->boolean('active'),
         ]);

@@ -30,7 +30,7 @@ class CreateNewUser implements CreatesNewUsers
         return User::create([
             'name' => $input['name'],
             'role' => UserRole::CLIENT,
-            'tax_id' => $input['tax_id'] ?? fake()->unique()->numerify('###########'),
+            'cpf' => $input['cpf'] ?? fake()->unique()->numerify('###########'),
             'email' => $input['email'],
             'password' => $input['password'],
         ]);

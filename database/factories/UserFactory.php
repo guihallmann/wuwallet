@@ -30,7 +30,7 @@ class UserFactory extends Factory
         return [
             'role' => UserRole::CLIENT,
             'name' => fake()->name(),
-            'tax_id' => fake()->unique()->numerify('###########'),
+            'cpf' => fake()->unique()->numerify('###########'),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'active' => true,
