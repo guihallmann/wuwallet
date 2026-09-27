@@ -1,6 +1,7 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import UserController from '@/actions/App/Http/Controllers/UserController';
 import InputError from '@/components/input-error';
+import { MaskedInput } from '@/components/masked-input';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,15 +14,16 @@ type ManagedUser = {
     id: string;
     name: string;
     email: string;
-    tax_id: string;
+    cpf: string | null;
     active: boolean;
 };
 
 type Props = {
     user: ManagedUser;
+    managedRole: 'analyst' | 'client';
 };
 
-export default function UsersEdit({ user }: Props) {
+export default function UsersEdit({ user, managedRole }: Props) {
     return (
         <>
             <Head title={`Edit ${user.name}`} />
@@ -69,18 +71,20 @@ export default function UsersEdit({ user }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="tax_id">CPF</Label>
-                                    <Input
-                                        id="tax_id"
-                                        name="tax_id"
-                                        defaultValue={user.tax_id}
-                                        inputMode="numeric"
-                                        maxLength={11}
-                                        required
-                                    />
-                                    <InputError message={errors.tax_id} />
-                                </div>
+                                {managedRole === 'client' && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="cpf">CPF</Label>
+                                        <MaskedInput
+                                            id="cpf"
+                                            name="cpf"
+                                            mask="000.000.000-00"
+                                            defaultValue={user.cpf ?? ''}
+                                            inputMode="numeric"
+                                            required
+                                        />
+                                        <InputError message={errors.cpf} />
+                                    </div>
+                                )}
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="password">

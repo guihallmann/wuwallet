@@ -33,7 +33,7 @@ export function AppSidebar() {
 
     if (role === 'manager' || role === 'analyst') {
         navigationItems.push({
-            title: 'Users',
+            title: role === 'manager' ? 'Analistas' : 'Clientes',
             href: usersIndex(),
             icon: Users,
         });

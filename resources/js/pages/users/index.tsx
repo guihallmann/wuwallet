@@ -8,7 +8,7 @@ type ManagedUser = {
     id: string;
     name: string;
     email: string;
-    tax_id: string;
+    cpf: string | null;
 active: boolean;
 };
 
@@ -19,16 +19,16 @@ type Props = {
 
 const copy = {
     analyst: {
-        title: 'Analysts',
-        description: 'Manage the analysts on your team.',
-        newLabel: 'New analyst',
-        empty: 'No analysts yet.',
+        title: 'Analistas',
+        description: 'Gerencie seus analistas.',
+        newLabel: 'Novo analista',
+        empty: 'Nenhum analista cadastrado.',
     },
     client: {
-        title: 'Clients',
-        description: 'Manage the clients you are responsible for.',
-        newLabel: 'New client',
-        empty: 'No clients yet.',
+        title: 'Clientes',
+        description: 'Gerencie seus clientes.',
+        newLabel: 'Novo cliente',
+        empty: 'Nenhum cliente cadastrado.',
     },
 } as const;
 
@@ -66,7 +66,11 @@ export default function UsersIndex({ users, managedRole }: Props) {
                             <tr className="text-left">
                                 <th className="px-4 py-3 font-medium">Nome</th>
                                 <th className="px-4 py-3 font-medium">Email</th>
-                                <th className="px-4 py-3 font-medium">CPF</th>
+                                {managedRole === 'client' && (
+                                    <th className="px-4 py-3 font-medium">
+                                        CPF
+                                    </th>
+                                )}
                                 <th className="px-4 py-3 font-medium">Status</th>
                                 <th className="px-4 py-3 font-medium text-right">
                                     Ações
@@ -77,7 +81,7 @@ export default function UsersIndex({ users, managedRole }: Props) {
                             {users.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={5}
+                                        colSpan={managedRole === 'client' ? 5 : 4}
                                         className="text-muted-foreground px-4 py-8 text-center"
                                     >
                                         {text.empty}
@@ -92,9 +96,11 @@ export default function UsersIndex({ users, managedRole }: Props) {
                                         <td className="text-muted-foreground px-4 py-3">
                                             {user.email}
                                         </td>
-                                        <td className="text-muted-foreground px-4 py-3">
-                                            {user.tax_id}
-                                        </td>
+                                        {managedRole === 'client' && (
+                                            <td className="text-muted-foreground px-4 py-3">
+                                                {user.cpf}
+                                            </td>
+                                        )}
                                         <td className="px-4 py-3">
                                             <Badge
                                                 variant={

@@ -1,5 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
+import { IMaskInput } from 'react-imask';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
@@ -72,16 +73,19 @@ export default function ClientRegister({ analystId, email, query }: Props) {
 
                     <div className="grid gap-2">
                         <Label htmlFor="cpf">CPF</Label>
-                        <Input
+                        <IMaskInput
+                            mask="000.000.000-00"
+                            unmask
                             id="cpf"
                             name="cpf"
                             value={form.data.cpf}
-                            onChange={(event) =>
-                                form.setData('cpf', event.target.value)
+                            onAccept={(value: string) =>
+                                form.setData('cpf', value)
                             }
-                            placeholder="00000000000"
+                            placeholder="000.000.000-00"
                             autoComplete="off"
-                            maxLength={11}
+                            inputMode="numeric"
+                            className="border-input file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"
                         />
                         <InputError message={form.errors.cpf} />
                     </div>
@@ -148,6 +152,6 @@ export default function ClientRegister({ analystId, email, query }: Props) {
 }
 
 ClientRegister.layout = {
-    title: 'Complete your registration',
-    description: 'Finalize your account using the invitation link.',
+    title: 'Complete seu cadastro',
+    description: 'Cadastre sua conta usando o link de convite.',
 };

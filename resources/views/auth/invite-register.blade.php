@@ -23,8 +23,8 @@
                 </div>
 
                 <div>
-                    <label for="tax_id">CPF</label>
-                    <input id="tax_id" name="tax_id" type="text" value="{{ old('tax_id') }}" maxlength="11" required style="width: 100%; margin-top: .5rem; margin-bottom: 1rem;" />
+                    <label for="cpf">CPF</label>
+                    <input id="cpf" name="cpf" type="text" value="{{ old('cpf') }}" maxlength="11" required style="width: 100%; margin-top: .5rem; margin-bottom: 1rem;" />
                 </div>
 
                 <div>

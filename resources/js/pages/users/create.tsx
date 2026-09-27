@@ -1,6 +1,7 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import UserController from '@/actions/App/Http/Controllers/UserController';
 import InputError from '@/components/input-error';
+import { MaskedInput } from '@/components/masked-input';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,8 +15,8 @@ type Props = {
 };
 
 const copy = {
-    analyst: { title: 'New analyst', submit: 'Create analyst' },
-    client: { title: 'New client', submit: 'Create client' },
+    analyst: { title: 'Novo analista', submit: 'Cadastrar analista' },
+    client: { title: 'Novo cliente', submit: 'Cadastrar cliente' },
 } as const;
 
 export default function UsersCreate({ managedRole }: Props) {
@@ -63,18 +64,20 @@ export default function UsersCreate({ managedRole }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="tax_id">CPF</Label>
-                                    <Input
-                                        id="tax_id"
-                                        name="tax_id"
-                                        inputMode="numeric"
-                                        maxLength={11}
-                                        placeholder="00000000000"
-                                        required
-                                    />
-                                    <InputError message={errors.tax_id} />
-                                </div>
+                                {managedRole === 'client' && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="cpf">CPF</Label>
+                                        <MaskedInput
+                                            id="cpf"
+                                            name="cpf"
+                                            mask="000.000.000-00"
+                                            inputMode="numeric"
+                                            placeholder="000.000.000-00"
+                                            required
+                                        />
+                                        <InputError message={errors.cpf} />
+                                    </div>
+                                )}
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="password">Senha</Label>
