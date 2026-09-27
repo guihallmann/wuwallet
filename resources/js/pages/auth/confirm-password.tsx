@@ -11,16 +11,15 @@ export default function ConfirmPassword() {
         <>
             <Head title="Confirm password" />
 
-
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
                     <div className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">Senha</Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
-                                placeholder="Password"
+                                placeholder="Senha"
                                 autoComplete="current-password"
                                 autoFocus
                             />
@@ -35,7 +34,7 @@ export default function ConfirmPassword() {
                                 data-test="confirm-password-button"
                             >
                                 {processing && <Spinner />}
-                                Confirm password
+                                Confirmar senha
                             </Button>
                         </div>
                     </div>
