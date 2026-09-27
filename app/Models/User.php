@@ -97,4 +97,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(self::class, 'manager_id')->where('role', UserRole::CLIENT->value);
     }
+
+    /**
+     * @return HasMany<Wallet, $this>
+     */
+    public function wallets(): HasMany
+    {
+        return $this->hasMany(Wallet::class);
+    }
 }

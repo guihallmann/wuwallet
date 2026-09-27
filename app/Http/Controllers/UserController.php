@@ -23,13 +23,33 @@ class UserController extends Controller
 
         Gate::authorize('viewAny', User::class);
 
+        $managedRole = $this->managedRole($manager);
+        $search = trim((string) $request->string('search'));
+
+        $summary = null;
+
+        if ($managedRole === UserRole::CLIENT) {
+            $clients = $manager->clients()->with('wallets.assets.asset')->get();
+
+            $summary = [
+                'totalPatrimony' => $clients->sum(
+                    fn (User $client) => $client->wallets->sum(fn ($wallet) => $wallet->totalValue())
+                ),
+                'totalClients' => $clients->count(),
+                'activeClients' => $clients->where('active', true)->count(),
+            ];
+        }
+
         $users = ($manager->isManager() ? $manager->analysts() : $manager->clients())
+            ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'cpf', 'active']);
 
         return Inertia::render('users/index', [
             'users' => $users,
-            'managedRole' => $this->managedRole($manager)->value,
+            'managedRole' => $managedRole->value,
+            'summary' => $summary,
+            'filters' => ['search' => $search],
         ]);
     }
 

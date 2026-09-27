@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Send, Users } from 'lucide-react';
+import { LayoutGrid, Send, Users, Wallet } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -15,6 +15,7 @@ import {
 import { dashboard } from '@/routes';
 import { create as createInvite } from '@/routes/analyst/invites';
 import { index as usersIndex } from '@/routes/users';
+import { index as walletsIndex } from '@/routes/wallets';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -44,6 +45,14 @@ export function AppSidebar() {
             title: 'Invite client',
             href: createInvite(),
             icon: Send,
+        });
+    }
+
+    if (role === 'client') {
+        navigationItems.push({
+            title: 'Carteiras',
+            href: walletsIndex(),
+            icon: Wallet,
         });
     }
 

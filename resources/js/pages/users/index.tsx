@@ -1,7 +1,12 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { formatCurrency } from '@/lib/utils';
+import { index as clientWalletsIndex } from '@/routes/clients/wallets';
 import { create, edit, index } from '@/routes/users';
 
 type ManagedUser = {
@@ -12,9 +17,17 @@ type ManagedUser = {
 active: boolean;
 };
 
+type Summary = {
+    totalPatrimony: number;
+    totalClients: number;
+    activeClients: number;
+};
+
 type Props = {
     users: ManagedUser[];
     managedRole: 'analyst' | 'client';
+    summary: Summary | null;
+    filters: { search: string };
 };
 
 const copy = {
@@ -32,8 +45,24 @@ const copy = {
     },
 } as const;
 
-export default function UsersIndex({ users, managedRole }: Props) {
+export default function UsersIndex({ users, managedRole, summary, filters }: Props) {
     const text = copy[managedRole];
+    const [search, setSearch] = useState(filters.search);
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            if (search !== filters.search) {
+                router.get(
+                    index(),
+                    search ? { search } : {},
+                    { preserveState: true, replace: true },
+                );
+            }
+        }, 300);
+
+        return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search]);
 
     return (
         <>
@@ -59,6 +88,48 @@ export default function UsersIndex({ users, managedRole }: Props) {
                         </Button>
                     )}
                 </div>
+
+                {summary && (
+                    <div className="grid gap-4 sm:grid-cols-3">
+                        <Card>
+                            <CardContent className="flex flex-col gap-1">
+                                <CardDescription>
+                                    Patrimônio total
+                                </CardDescription>
+                                <CardTitle className="text-2xl">
+                                    {formatCurrency(summary.totalPatrimony)}
+                                </CardTitle>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="flex flex-col gap-1">
+                                <CardDescription>
+                                    Total de clientes
+                                </CardDescription>
+                                <CardTitle className="text-2xl">
+                                    {summary.totalClients}
+                                </CardTitle>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="flex flex-col gap-1">
+                                <CardDescription>
+                                    Clientes ativos
+                                </CardDescription>
+                                <CardTitle className="text-2xl">
+                                    {summary.activeClients}
+                                </CardTitle>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+
+                <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder={`Buscar ${text.title.toLowerCase()} por nome...`}
+                    className="max-w-sm"
+                />
 
                 <div className="border-border overflow-hidden rounded-xl border">
                     <table className="w-full text-sm">
@@ -115,15 +186,32 @@ export default function UsersIndex({ users, managedRole }: Props) {
                                             </Badge>
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <Button
-                                                asChild
-                                                variant="outline"
-                                                size="sm"
-                                            >
-                                                <Link href={edit(user.id)}>
-                                                    Editar
-                                                </Link>
-                                            </Button>
+                                            <div className="flex justify-end gap-2">
+                                                {managedRole === 'client' && (
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="sm"
+                                                    >
+                                                        <Link
+                                                            href={clientWalletsIndex(
+                                                                user.id,
+                                                            )}
+                                                        >
+                                                            Ver carteiras
+                                                        </Link>
+                                                    </Button>
+                                                )}
+                                                <Button
+                                                    asChild
+                                                    variant="outline"
+                                                    size="sm"
+                                                >
+                                                    <Link href={edit(user.id)}>
+                                                        Editar
+                                                    </Link>
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
