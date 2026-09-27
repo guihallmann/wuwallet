@@ -14,7 +14,7 @@ class Company extends Model
      */
     protected $fillable = [
         'name',
-        'tax_id',
+        'code',
         'sector',
         'subsector',
         'segment',

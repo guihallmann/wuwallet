@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('companies', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
-            $table->string('tax_id', 14)->unique();
+            $table->string('code')->unique();
             $table->string('sector');
             $table->string('subsector')->nullable();
             $table->string('segment')->nullable();
