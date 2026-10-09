@@ -3,7 +3,12 @@ import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { formatCurrency } from '@/lib/utils';
 import { index as clientWalletsIndex } from '@/routes/clients/wallets';
@@ -13,7 +18,7 @@ type ManagedUser = {
     id: string;
     name: string;
     email: string;
-active: boolean;
+    active: boolean;
 };
 
 type Summary = {
@@ -44,18 +49,22 @@ const copy = {
     },
 } as const;
 
-export default function UsersIndex({ users, managedRole, summary, filters }: Props) {
+export default function UsersIndex({
+    users,
+    managedRole,
+    summary,
+    filters,
+}: Props) {
     const text = copy[managedRole];
     const [search, setSearch] = useState(filters.search);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
             if (search !== filters.search) {
-                router.get(
-                    index(),
-                    search ? { search } : {},
-                    { preserveState: true, replace: true },
-                );
+                router.get(index(), search ? { search } : {}, {
+                    preserveState: true,
+                    replace: true,
+                });
             }
         }, 300);
 
@@ -136,8 +145,10 @@ export default function UsersIndex({ users, managedRole, summary, filters }: Pro
                             <tr className="text-left">
                                 <th className="px-4 py-3 font-medium">Nome</th>
                                 <th className="px-4 py-3 font-medium">Email</th>
-                                <th className="px-4 py-3 font-medium">Status</th>
-                                <th className="px-4 py-3 font-medium text-right">
+                                <th className="px-4 py-3 font-medium">
+                                    Status
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
                                     Ações
                                 </th>
                             </tr>
@@ -146,7 +157,9 @@ export default function UsersIndex({ users, managedRole, summary, filters }: Pro
                             {users.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={managedRole === 'client' ? 5 : 4}
+                                        colSpan={
+                                            managedRole === 'client' ? 5 : 4
+                                        }
                                         className="text-muted-foreground px-4 py-8 text-center"
                                     >
                                         {text.empty}
@@ -154,7 +167,10 @@ export default function UsersIndex({ users, managedRole, summary, filters }: Pro
                                 </tr>
                             ) : (
                                 users.map((user) => (
-                                    <tr key={user.id} className="hover:bg-muted/30">
+                                    <tr
+                                        key={user.id}
+                                        className="hover:bg-muted/30"
+                                    >
                                         <td className="px-4 py-3 font-medium">
                                             {user.name}
                                         </td>

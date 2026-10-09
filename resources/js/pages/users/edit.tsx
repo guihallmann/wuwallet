@@ -22,7 +22,6 @@ type Props = {
 };
 
 export default function UsersEdit({ user, managedRole }: Props) {
-
     return (
         <>
             <Head title={`Edit ${user.name}`} />
@@ -70,17 +69,23 @@ export default function UsersEdit({ user, managedRole }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
 
-                                {managedRole === 'client' && <div className="grid gap-2">
-                                    <Label htmlFor="email">Email de recuperação</Label>
-                                    <Input
-                                        id="recovery_email"
-                                        name="recovery_email"
-                                        type="recovery_email"
-                                        defaultValue={user.recovery_email}
-                                        autoComplete="recovery_email"
-                                    />
-                                    <InputError message={errors.recovery_email} />
-                                </div>}
+                                {managedRole === 'client' && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="email">
+                                            Email de recuperação
+                                        </Label>
+                                        <Input
+                                            id="recovery_email"
+                                            name="recovery_email"
+                                            type="recovery_email"
+                                            defaultValue={user.recovery_email}
+                                            autoComplete="recovery_email"
+                                        />
+                                        <InputError
+                                            message={errors.recovery_email}
+                                        />
+                                    </div>
+                                )}
 
                                 <div className="flex items-center gap-3">
                                     <Checkbox
@@ -89,9 +94,7 @@ export default function UsersEdit({ user, managedRole }: Props) {
                                         value="1"
                                         defaultChecked={user.active}
                                     />
-                                    <Label htmlFor="active">
-                                        Conta ativa
-                                    </Label>
+                                    <Label htmlFor="active">Conta ativa</Label>
                                 </div>
 
                                 <div className="flex items-center gap-3">

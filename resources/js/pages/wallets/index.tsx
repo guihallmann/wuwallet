@@ -79,11 +79,11 @@ export default function WalletsIndex(props: Props) {
                                 <th className="px-4 py-3 font-medium">
                                     Objetivo
                                 </th>
-                                <th className="px-4 py-3 font-medium text-right">
+                                <th className="px-4 py-3 text-right font-medium">
                                     Valor
                                 </th>
                                 {mode === 'manage' && (
-                                    <th className="px-4 py-3 font-medium text-right">
+                                    <th className="px-4 py-3 text-right font-medium">
                                         Ações
                                     </th>
                                 )}
@@ -121,7 +121,9 @@ export default function WalletsIndex(props: Props) {
                                                     variant="outline"
                                                     size="sm"
                                                 >
-                                                    <Link href={edit(wallet.id)}>
+                                                    <Link
+                                                        href={edit(wallet.id)}
+                                                    >
                                                         Editar
                                                     </Link>
                                                 </Button>

@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Hash;
 
 class ClientRegistrationService
 {
+    /**
+     * @param  array{nome: string, recovery_email: string, password: string}  $data
+     */
     public function registerClient(array $data, string $analystId, string $email): User
     {
         $user = DB::transaction(function () use ($data, $analystId, $email) {

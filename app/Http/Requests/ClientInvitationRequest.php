@@ -7,6 +7,7 @@ namespace App\Http\Requests;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 
 class ClientInvitationRequest extends FormRequest
 {
@@ -16,7 +17,7 @@ class ClientInvitationRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, string|Unique>>
      */
     public function rules(): array
     {

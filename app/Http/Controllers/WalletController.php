@@ -26,7 +26,7 @@ class WalletController extends Controller
         return Inertia::render('wallets/index', [
             'mode' => 'manage',
             'wallets' => $this->mapWallets($wallets),
-            'totalValue' => $wallets->sum(fn(Wallet $wallet) => $wallet->totalValue()),
+            'totalValue' => $wallets->sum(fn (Wallet $wallet) => $wallet->totalValue()),
         ]);
     }
 
@@ -42,7 +42,7 @@ class WalletController extends Controller
             'mode' => 'view',
             'client' => $client->only(['id', 'name']),
             'wallets' => $this->mapWallets($wallets),
-            'totalValue' => $wallets->sum(fn(Wallet $wallet) => $wallet->totalValue()),
+            'totalValue' => $wallets->sum(fn (Wallet $wallet) => $wallet->totalValue()),
         ]);
     }
 
@@ -104,7 +104,7 @@ class WalletController extends Controller
     private function mapWallets(Collection $wallets): array
     {
         return array_values($wallets
-            ->map(fn(Wallet $wallet) => [
+            ->map(fn (Wallet $wallet) => [
                 'id' => $wallet->id,
                 'name' => $wallet->name,
                 'objective_text' => $wallet->objective_text,

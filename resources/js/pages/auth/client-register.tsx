@@ -1,8 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { IMaskInput } from 'react-imask';
-import { AddressFields, emptyAddress } from '@/components/address-fields';
-import type { AddressValue } from '@/components/address-fields';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
@@ -64,7 +61,10 @@ export default function ClientRegister({ analystId, email, query }: Props) {
                             type="email"
                             value={form.data.recovery_email}
                             onChange={(event) =>
-                                form.setData('recovery_email', event.target.value)
+                                form.setData(
+                                    'recovery_email',
+                                    event.target.value,
+                                )
                             }
                             placeholder="E-mail de recuperação"
                             autoComplete="recovery_email"
@@ -87,7 +87,6 @@ export default function ClientRegister({ analystId, email, query }: Props) {
                         />
                         <InputError message={form.errors.nome} />
                     </div>
-
 
                     <div className="grid gap-2">
                         <Label htmlFor="password">Senha</Label>

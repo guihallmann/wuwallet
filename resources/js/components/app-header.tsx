@@ -55,7 +55,11 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
         auth.user?.role === 'analyst'
             ? [
                   ...mainNavItems,
-                  { title: 'Convidar cliente', href: createInvite(), icon: Send },
+                  {
+                      title: 'Convidar cliente',
+                      href: createInvite(),
+                      icon: Send,
+                  },
               ]
             : mainNavItems;
 

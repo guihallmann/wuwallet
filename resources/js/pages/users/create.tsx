@@ -1,7 +1,6 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import UserController from '@/actions/App/Http/Controllers/UserController';
 import InputError from '@/components/input-error';
-import { MaskedInput } from '@/components/masked-input';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -94,9 +93,7 @@ export default function UsersCreate({ managedRole }: Props) {
                                         value="1"
                                         defaultChecked
                                     />
-                                    <Label htmlFor="active">
-                                        Conta ativa
-                                    </Label>
+                                    <Label htmlFor="active">Conta ativa</Label>
                                 </div>
 
                                 <div className="flex items-center gap-3">

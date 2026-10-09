@@ -33,7 +33,7 @@ class UserController extends Controller
 
             $summary = [
                 'totalPatrimony' => $clients->sum(
-                    fn(User $client) => $client->wallets->sum(fn($wallet) => $wallet->totalValue())
+                    fn (User $client) => $client->wallets->sum(fn ($wallet) => $wallet->totalValue())
                 ),
                 'totalClients' => $clients->count(),
                 'activeClients' => $clients->where('active', true)->count(),
@@ -41,7 +41,7 @@ class UserController extends Controller
         }
 
         $users = ($manager->isManager() ? $manager->analysts() : $manager->clients())
-            ->when($search !== '', fn($query) => $query->where('name', 'like', "%{$search}%"))
+            ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'active']);
 

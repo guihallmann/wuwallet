@@ -48,7 +48,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($manager)->get(route('users.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn($page) => $page
+        $response->assertInertia(fn ($page) => $page
             ->component('users/index')
             ->where('managedRole', 'analyst')
             ->has('users', 1)
@@ -70,7 +70,7 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($analyst)->get(route('users.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn($page) => $page
+        $response->assertInertia(fn ($page) => $page
             ->component('users/index')
             ->where('managedRole', 'client')
             ->has('users', 1)
@@ -85,7 +85,7 @@ class UserManagementTest extends TestCase
         $this->actingAs($manager)
             ->get(route('users.create'))
             ->assertOk()
-            ->assertInertia(fn($page) => $page
+            ->assertInertia(fn ($page) => $page
                 ->component('users/create')
                 ->where('managedRole', 'analyst'));
 
