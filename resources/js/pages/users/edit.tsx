@@ -1,8 +1,6 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import UserController from '@/actions/App/Http/Controllers/UserController';
 import InputError from '@/components/input-error';
-import { MaskedInput } from '@/components/masked-input';
-import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -14,7 +12,7 @@ type ManagedUser = {
     id: string;
     name: string;
     email: string;
-    cpf: string | null;
+    recovery_email: string;
     active: boolean;
 };
 
@@ -24,6 +22,7 @@ type Props = {
 };
 
 export default function UsersEdit({ user, managedRole }: Props) {
+
     return (
         <>
             <Head title={`Edit ${user.name}`} />
@@ -71,44 +70,17 @@ export default function UsersEdit({ user, managedRole }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
 
-                                {managedRole === 'client' && (
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="cpf">CPF</Label>
-                                        <MaskedInput
-                                            id="cpf"
-                                            name="cpf"
-                                            mask="000.000.000-00"
-                                            defaultValue={user.cpf ?? ''}
-                                            inputMode="numeric"
-                                            required
-                                        />
-                                        <InputError message={errors.cpf} />
-                                    </div>
-                                )}
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="password">
-                                        Nova senha
-                                    </Label>
-                                    <PasswordInput
-                                        id="password"
-                                        name="password"
-                                        autoComplete="new-password"
-                                        placeholder="Leave blank to keep current"
+                                {managedRole === 'client' && <div className="grid gap-2">
+                                    <Label htmlFor="email">Email de recuperação</Label>
+                                    <Input
+                                        id="recovery_email"
+                                        name="recovery_email"
+                                        type="recovery_email"
+                                        defaultValue={user.recovery_email}
+                                        autoComplete="recovery_email"
                                     />
-                                    <InputError message={errors.password} />
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label htmlFor="password_confirmation">
-                                        Confirmar nova senha
-                                    </Label>
-                                    <PasswordInput
-                                        id="password_confirmation"
-                                        name="password_confirmation"
-                                        autoComplete="new-password"
-                                    />
-                                </div>
+                                    <InputError message={errors.recovery_email} />
+                                </div>}
 
                                 <div className="flex items-center gap-3">
                                     <Checkbox

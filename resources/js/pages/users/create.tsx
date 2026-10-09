@@ -64,21 +64,6 @@ export default function UsersCreate({ managedRole }: Props) {
                                     <InputError message={errors.email} />
                                 </div>
 
-                                {managedRole === 'client' && (
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="cpf">CPF</Label>
-                                        <MaskedInput
-                                            id="cpf"
-                                            name="cpf"
-                                            mask="000.000.000-00"
-                                            inputMode="numeric"
-                                            placeholder="000.000.000-00"
-                                            required
-                                        />
-                                        <InputError message={errors.cpf} />
-                                    </div>
-                                )}
-
                                 <div className="grid gap-2">
                                     <Label htmlFor="password">Senha</Label>
                                     <PasswordInput

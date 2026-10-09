@@ -23,11 +23,6 @@
                 </div>
 
                 <div>
-                    <label for="cpf">CPF</label>
-                    <input id="cpf" name="cpf" type="text" value="{{ old('cpf') }}" maxlength="11" required style="width: 100%; margin-top: .5rem; margin-bottom: 1rem;" />
-                </div>
-
-                <div>
                     <label for="password">Senha</label>
                     <input id="password" name="password" type="password" required style="width: 100%; margin-top: .5rem; margin-bottom: 1rem;" />
                 </div>

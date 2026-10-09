@@ -13,7 +13,6 @@ type ManagedUser = {
     id: string;
     name: string;
     email: string;
-    cpf: string | null;
 active: boolean;
 };
 
@@ -137,11 +136,6 @@ export default function UsersIndex({ users, managedRole, summary, filters }: Pro
                             <tr className="text-left">
                                 <th className="px-4 py-3 font-medium">Nome</th>
                                 <th className="px-4 py-3 font-medium">Email</th>
-                                {managedRole === 'client' && (
-                                    <th className="px-4 py-3 font-medium">
-                                        CPF
-                                    </th>
-                                )}
                                 <th className="px-4 py-3 font-medium">Status</th>
                                 <th className="px-4 py-3 font-medium text-right">
                                     Ações
@@ -167,11 +161,6 @@ export default function UsersIndex({ users, managedRole, summary, filters }: Pro
                                         <td className="text-muted-foreground px-4 py-3">
                                             {user.email}
                                         </td>
-                                        {managedRole === 'client' && (
-                                            <td className="text-muted-foreground px-4 py-3">
-                                                {user.cpf}
-                                            </td>
-                                        )}
                                         <td className="px-4 py-3">
                                             <Badge
                                                 variant={
