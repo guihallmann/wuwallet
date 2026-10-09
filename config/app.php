@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'WuWallet'),
 
     /*
     |--------------------------------------------------------------------------
@@ -83,6 +83,12 @@ return [
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+
+    'manager_master_email' => env('MANAGER_MASTER_EMAIL', 'manager@email.com'),
+
+    'manager_master_name' => env('MANAGER_MASTER_NAME', 'Manager'),
+
+    'manager_master_password' => env('MANAGER_MASTER_PASSWORD', 'password'),
 
     /*
     |--------------------------------------------------------------------------
