@@ -54,7 +54,7 @@ class WalletManagementTest extends TestCase
         $response = $this->actingAs($client)->get(route('wallets.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn($page) => $page
+        $response->assertInertia(fn ($page) => $page
             ->component('wallets/index')
             ->where('mode', 'manage')
             ->has('wallets', 1)
@@ -90,7 +90,7 @@ class WalletManagementTest extends TestCase
 
         $response = $this->actingAs($client)->get(route('wallets.index'));
 
-        $response->assertInertia(fn($page) => $page
+        $response->assertInertia(fn ($page) => $page
             ->where('wallets.0.total_value', 300)
             ->where('totalValue', 300));
     }
@@ -161,7 +161,7 @@ class WalletManagementTest extends TestCase
         $response = $this->actingAs($analyst)->get(route('clients.wallets.index', $client));
 
         $response->assertOk();
-        $response->assertInertia(fn($page) => $page
+        $response->assertInertia(fn ($page) => $page
             ->component('wallets/index')
             ->where('mode', 'view')
             ->where('client.id', $client->getKey())

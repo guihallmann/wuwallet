@@ -78,7 +78,7 @@ export default function CreateInvite() {
 CreateInvite.layout = {
     breadcrumbs: [
         {
-            title: 'Invite client',
+            title: 'Convidar cliente',
             href: store(),
         },
     ],

@@ -42,7 +42,7 @@ export function AppSidebar() {
 
     if (role === 'analyst') {
         navigationItems.push({
-            title: 'Invite client',
+            title: 'Convidar cliente',
             href: createInvite(),
             icon: Send,
         });
