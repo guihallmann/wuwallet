@@ -55,7 +55,7 @@ class ClientRegistrationTest extends TestCase
 
         $response = $this->from($url)->post($url, [
             'nome' => 'Maria Silva',
-            'cpf' => '12345678909',
+            'recovery_email' => 'recovery@email.com',
             'password' => 'Password@123',
             'password_confirmation' => 'Password@123',
         ]);
@@ -66,7 +66,7 @@ class ClientRegistrationTest extends TestCase
         $user = User::query()->where('email', 'client@example.com')->firstOrFail();
 
         $this->assertSame('Maria Silva', $user->name);
-        $this->assertSame('12345678909', $user->cpf);
+        $this->assertSame('recovery@email.com', $user->recovery_email);
         $this->assertSame(UserRole::CLIENT->value, $user->role->value);
         $this->assertSame($analyst->getKey(), $user->manager_id);
         $this->assertNotSame('Password@123', $user->password);
@@ -81,7 +81,6 @@ class ClientRegistrationTest extends TestCase
 
         $existing = User::factory()->create([
             'role' => UserRole::CLIENT,
-            'cpf' => '12345678909',
         ]);
 
         $url = URL::temporarySignedRoute(
@@ -95,12 +94,11 @@ class ClientRegistrationTest extends TestCase
 
         $response = $this->from($url)->post($url, [
             'nome' => '',
-            'cpf' => $existing->cpf,
             'password' => '123',
             'password_confirmation' => '456',
         ]);
 
-        $response->assertSessionHasErrors(['nome', 'cpf', 'password']);
+        $response->assertSessionHasErrors(['nome', 'password']);
     }
 
     public function test_registration_fails_if_signature_is_invalid(): void

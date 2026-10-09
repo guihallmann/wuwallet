@@ -46,7 +46,7 @@ class ClientInvitationController extends Controller
 
         Mail::to($email)->send(new ClientInvitationMail($email, $inviteUrl));
 
-        return back()->with('status', __('Client invitation sent successfully.'));
+        return back()->with('status', __('Convite enviado com sucesso'));
     }
 
     public function showRegistrationForm(Request $request, string $analystId): View
@@ -91,7 +91,6 @@ class ClientInvitationController extends Controller
             'manager_id' => $analyst->getKey(),
             'role' => UserRole::CLIENT,
             'name' => $request->validated('name'),
-            'cpf' => $request->validated('cpf'),
             'email' => $email,
             'password' => Hash::make($request->validated('password')),
             'email_verified_at' => now(),

@@ -113,6 +113,7 @@ class UserManagementTest extends TestCase
         $manager = $this->manager();
 
         $response = $this->actingAs($manager)->post(route('users.store'), [
+            'name' => 'New Analyst',
             'email' => 'analyst@example.com',
             'password' => 'password-123',
             'password_confirmation' => 'password-123',
@@ -125,7 +126,6 @@ class UserManagementTest extends TestCase
             'email' => 'analyst@example.com',
             'manager_id' => $manager->getKey(),
             'role' => UserRole::ANALYST->value,
-            'cpf' => null,
             'active' => true,
         ]);
     }
@@ -138,7 +138,6 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($analyst)->post(route('users.store'), [
             'name' => 'New Client',
             'email' => 'client@example.com',
-            'cpf' => '98765432100',
             'password' => 'password-123',
             'password_confirmation' => 'password-123',
             'active' => '1',
@@ -161,7 +160,6 @@ class UserManagementTest extends TestCase
         $response = $this->actingAs($manager)->post(route('users.store'), [
             'name' => 'Duplicate',
             'email' => $existing->email,
-            'cpf' => '11122233344',
             'password' => 'password-123',
             'password_confirmation' => 'password-123',
         ]);
@@ -202,7 +200,6 @@ class UserManagementTest extends TestCase
             ->put(route('users.update', $foreignAnalyst), [
                 'name' => 'Hijack',
                 'email' => $foreignAnalyst->email,
-                'cpf' => $foreignAnalyst->cpf,
                 'active' => '1',
             ])
             ->assertForbidden();

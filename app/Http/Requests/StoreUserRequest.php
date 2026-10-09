@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Concerns\PasswordValidationRules;
-use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends FormRequest
 {
@@ -23,12 +23,6 @@ class StoreUserRequest extends FormRequest
         $this->merge([
             'active' => $this->boolean('active'),
         ]);
-
-        if ($this->has('cpf')) {
-            $this->merge([
-                'cpf' => preg_replace('/\D+/', '', (string) $this->input('cpf')),
-            ]);
-        }
     }
 
     /**
@@ -36,25 +30,27 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        $cpfRequired = $this->managedRole() === UserRole::CLIENT;
-
         return [
             'name' => ['required', 'string', 'max:255'],
-            'cpf' => [$cpfRequired ? 'required' : 'nullable', 'string', 'size:11', 'cpf', 'unique:users,cpf'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email'),
+                Rule::unique('users', 'recovery_email'),
+            ],
+            'recovery_email' => [
+                'nullable',
+                'string',
+                'email',
+                'max:255',
+                'different:email',
+                Rule::unique('users', 'email'),
+                Rule::unique('users', 'recovery_email'),
+            ],
             'password' => $this->passwordRules(),
             'active' => ['boolean'],
         ];
-    }
-
-    private function managedRole(): ?UserRole
-    {
-        $manager = $this->user();
-
-        if (! $manager instanceof User) {
-            return null;
-        }
-
-        return $manager->isManager() ? UserRole::ANALYST : UserRole::CLIENT;
     }
 }

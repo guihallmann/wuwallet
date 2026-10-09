@@ -27,7 +27,6 @@ class DatabaseSeeder extends Seeder
                 'id' => (string) Str::uuid(),
                 'role' => UserRole::MANAGER->value,
                 'name' => config('app.manager_master_name'),
-                'cpf' => config('app.manager_master_cpf'),
                 'password' => Hash::make((string) config('app.manager_master_password')),
                 'email' => $managerEmail,
                 'created_at' => now(),
@@ -35,15 +34,14 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        $analystEmail = 'analyst@example.com';
+        $analystEmail = 'analista@email.com';
 
         if (! DB::table('users')->where('email', $analystEmail)->exists()) {
             DB::table('users')->insert([
                 'id' => (string) Str::uuid(),
                 'manager_id' => DB::table('users')->where('email', $managerEmail)->value('id'),
                 'role' => UserRole::ANALYST->value,
-                'name' => 'Analyst Seed User',
-                'cpf' => '12345678909',
+                'name' => 'Analista',
                 'password' => Hash::make('password'),
                 'email' => $analystEmail,
                 'email_verified_at' => now(),

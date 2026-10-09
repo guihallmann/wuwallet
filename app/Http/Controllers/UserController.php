@@ -33,7 +33,7 @@ class UserController extends Controller
 
             $summary = [
                 'totalPatrimony' => $clients->sum(
-                    fn (User $client) => $client->wallets->sum(fn ($wallet) => $wallet->totalValue())
+                    fn(User $client) => $client->wallets->sum(fn($wallet) => $wallet->totalValue())
                 ),
                 'totalClients' => $clients->count(),
                 'activeClients' => $clients->where('active', true)->count(),
@@ -41,9 +41,9 @@ class UserController extends Controller
         }
 
         $users = ($manager->isManager() ? $manager->analysts() : $manager->clients())
-            ->when($search !== '', fn ($query) => $query->where('name', 'like', "%{$search}%"))
+            ->when($search !== '', fn($query) => $query->where('name', 'like', "%{$search}%"))
             ->orderBy('name')
-            ->get(['id', 'name', 'email', 'cpf', 'active']);
+            ->get(['id', 'name', 'email', 'active']);
 
         return Inertia::render('users/index', [
             'users' => $users,
@@ -70,14 +70,14 @@ class UserController extends Controller
             'manager_id' => $manager->getKey(),
             'role' => $this->managedRole($manager),
             'name' => $request->validated('name'),
-            'cpf' => $request->validated('cpf'),
             'email' => $request->validated('email'),
+            'recovery_email' => $request->validated('recovery_email'),
             'password' => Hash::make((string) $request->validated('password')),
             'active' => $request->boolean('active'),
             'email_verified_at' => now(),
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('User created.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Usuário criado')]);
 
         return to_route('users.index');
     }
@@ -87,7 +87,7 @@ class UserController extends Controller
         Gate::authorize('update', $user);
 
         return Inertia::render('users/edit', [
-            'user' => $user->only(['id', 'name', 'email', 'cpf', 'active']),
+            'user' => $user->only(['id', 'name', 'email', 'recovery_email', 'active']),
             'managedRole' => $user->role->value,
         ]);
     }
@@ -96,18 +96,14 @@ class UserController extends Controller
     {
         $user->fill([
             'name' => $request->validated('name'),
-            'cpf' => $request->validated('cpf'),
             'email' => $request->validated('email'),
+            'recovery_email' => $request->validated('recovery_email'),
             'active' => $request->boolean('active'),
         ]);
 
-        if (filled($request->validated('password'))) {
-            $user->password = Hash::make((string) $request->validated('password'));
-        }
-
         $user->save();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('User updated.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Usuário atualizado')]);
 
         return to_route('users.index');
     }

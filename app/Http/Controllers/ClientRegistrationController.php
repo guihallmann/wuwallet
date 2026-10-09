@@ -38,7 +38,7 @@ class ClientRegistrationController extends Controller
 
         $service->registerClient([
             'nome' => (string) $request->validated('nome'),
-            'cpf' => (string) $request->validated('cpf'),
+            'recovery_email' => (string) $request->validated('recovery_email'),
             'password' => (string) $request->validated('password'),
         ], $analystId, $email);
 

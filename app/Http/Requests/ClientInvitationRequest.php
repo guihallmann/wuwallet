@@ -6,6 +6,7 @@ namespace App\Http\Requests;
 
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ClientInvitationRequest extends FormRequest
 {
@@ -20,7 +21,13 @@ class ClientInvitationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email'),
+                Rule::unique('users', 'recovery_email'),
+            ],
         ];
     }
 }

@@ -28,7 +28,7 @@ class ClientInvitationTest extends TestCase
             ->get(route('analyst.invites.create'));
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn($page) => $page
             ->component('analyst/invites/create'));
     }
 
@@ -51,7 +51,7 @@ class ClientInvitationTest extends TestCase
 
         Mail::assertSent(ClientInvitationMail::class, function (ClientInvitationMail $mail) use ($analyst) {
             $this->assertSame('client@example.com', $mail->email);
-            $this->assertStringContainsString('/register/invite/'.$analyst->getKey(), $mail->inviteUrl);
+            $this->assertStringContainsString('/register/invite/' . $analyst->getKey(), $mail->inviteUrl);
 
             return true;
         });
@@ -66,8 +66,8 @@ class ClientInvitationTest extends TestCase
 
         $rendered = $mail->render();
 
-        $this->assertStringContainsString('You are invited', $rendered);
-        $this->assertStringContainsString('Complete your registration', $rendered);
+        $this->assertStringContainsString('Você foi convidado', $rendered);
+        $this->assertStringContainsString('Finalizar cadastro', $rendered);
         $this->assertStringContainsString('client@example.com', $rendered);
     }
 
@@ -91,7 +91,7 @@ class ClientInvitationTest extends TestCase
         parse_str($parsed['query'] ?? '', $query);
         $query['email'] = 'other@example.com';
         $parsed['query'] = http_build_query($query);
-        $tampered = ($parsed['scheme'] ?? 'http').'://'.($parsed['host'] ?? 'localhost').($parsed['path'] ?? '').'?'.$parsed['query'];
+        $tampered = ($parsed['scheme'] ?? 'http') . '://' . ($parsed['host'] ?? 'localhost') . ($parsed['path'] ?? '') . '?' . $parsed['query'];
 
         $response = $this->get($tampered);
 
@@ -139,7 +139,6 @@ class ClientInvitationTest extends TestCase
 
         $this->post($url, [
             'nome' => 'Client User',
-            'cpf' => '12345678901',
             'password' => 'Password@123',
             'password_confirmation' => 'Password@123',
         ]);

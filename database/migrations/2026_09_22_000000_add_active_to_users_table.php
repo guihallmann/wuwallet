@@ -12,6 +12,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table): void {
             $table->boolean('active')->default(true)->after('password');
+            $table->string('recovery_email')->unique()->nullable();
         });
     }
 

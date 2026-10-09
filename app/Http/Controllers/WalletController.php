@@ -60,7 +60,7 @@ class WalletController extends Controller
             'objective_text' => $request->validated('objective_text'),
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Wallet created.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Carteira criada')]);
 
         return to_route('wallets.index');
     }
@@ -81,7 +81,7 @@ class WalletController extends Controller
             'objective_text' => $request->validated('objective_text'),
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Wallet updated.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Carteira atualizada')]);
 
         return to_route('wallets.index');
     }
@@ -92,7 +92,7 @@ class WalletController extends Controller
 
         $wallet->delete();
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Wallet deleted.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Carteira excluída')]);
 
         return to_route('wallets.index');
     }

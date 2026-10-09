@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreClientRegistrationRequest extends FormRequest
 {
@@ -20,12 +21,6 @@ class StoreClientRegistrationRequest extends FormRequest
                 'nome' => trim((string) $this->input('nome')),
             ]);
         }
-
-        if ($this->has('cpf')) {
-            $this->merge([
-                'cpf' => preg_replace('/\D+/', '', (string) $this->input('cpf')),
-            ]);
-        }
     }
 
     /**
@@ -35,7 +30,13 @@ class StoreClientRegistrationRequest extends FormRequest
     {
         return [
             'nome' => ['required', 'string', 'max:255'],
-            'cpf' => ['required', 'string', 'size:11', 'cpf', 'unique:users,cpf'],
+            'recovery_email' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('users', 'email'),
+                Rule::unique('users', 'recovery_email'),
+            ],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
@@ -49,11 +50,7 @@ class StoreClientRegistrationRequest extends FormRequest
             'nome.required' => 'O campo nome é obrigatório.',
             'nome.string' => 'O campo nome deve conter texto válido.',
             'nome.max' => 'O campo nome deve ter no máximo 255 caracteres.',
-            'cpf.required' => 'O campo CPF é obrigatório.',
-            'cpf.string' => 'O campo CPF deve conter apenas números.',
-            'cpf.size' => 'O CPF deve conter 11 dígitos.',
-            'cpf.cpf' => 'O CPF informado não é válido.',
-            'cpf.unique' => 'Este CPF já está em uso.',
+
             'password.required' => 'O campo senha é obrigatório.',
             'password.string' => 'A senha deve conter texto válido.',
             'password.min' => 'A senha deve ter no mínimo 8 caracteres.',
@@ -68,7 +65,7 @@ class StoreClientRegistrationRequest extends FormRequest
     {
         return [
             'nome' => 'nome',
-            'cpf' => 'CPF',
+            'recovery_email' => 'email de recuperação',
             'password' => 'senha',
         ];
     }

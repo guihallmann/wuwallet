@@ -84,11 +84,9 @@ return [
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
-    'manager_master_email' => env('MANAGER_MASTER_EMAIL', 'manager@example.com'),
+    'manager_master_email' => env('MANAGER_MASTER_EMAIL', 'manager@email.com'),
 
-    'manager_master_name' => env('MANAGER_MASTER_NAME', 'Manager Master'),
-
-    'manager_master_cpf' => env('MANAGER_MASTER_CPF', '00000000000'),
+    'manager_master_name' => env('MANAGER_MASTER_NAME', 'Manager'),
 
     'manager_master_password' => env('MANAGER_MASTER_PASSWORD', 'password'),
 

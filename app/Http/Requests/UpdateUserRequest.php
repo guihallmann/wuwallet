@@ -7,7 +7,6 @@ namespace App\Http\Requests;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -24,12 +23,6 @@ class UpdateUserRequest extends FormRequest
         $this->merge([
             'active' => $this->boolean('active'),
         ]);
-
-        if ($this->has('cpf')) {
-            $this->merge([
-                'cpf' => preg_replace('/\D+/', '', (string) $this->input('cpf')),
-            ]);
-        }
     }
 
     /**
@@ -39,13 +32,26 @@ class UpdateUserRequest extends FormRequest
     {
         $model = $this->route('user');
         $userId = $model instanceof User ? $model->getKey() : null;
-        $cpfRequired = $model instanceof User && $model->isClient();
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'cpf' => [$cpfRequired ? 'required' : 'nullable', 'string', 'size:11', 'cpf', Rule::unique('users', 'cpf')->ignore($userId)],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
-            'password' => ['nullable', 'string', Password::default(), 'confirmed'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($userId),
+                Rule::unique('users', 'recovery_email')->ignore($userId),
+            ],
+            'recovery_email' => [
+                'nullable',
+                'string',
+                'email',
+                'max:255',
+                'different:email',
+                Rule::unique('users', 'email')->ignore($userId),
+                Rule::unique('users', 'recovery_email')->ignore($userId),
+            ],
             'active' => ['boolean'],
         ];
     }
