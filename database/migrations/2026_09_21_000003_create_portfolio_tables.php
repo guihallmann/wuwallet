@@ -10,25 +10,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('companies', function (Blueprint $table): void {
-            $table->id();
-            $table->string('name');
-            $table->string('code')->unique();
-            $table->string('sector');
-            $table->string('subsector')->nullable();
-            $table->string('segment')->nullable();
-            $table->timestamps();
-        });
-
         Schema::create('assets', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('company_id')->constrained('companies')->cascadeOnDelete();
-            $table->string('ticker');
+            $table->string('ticker')->unique();
+            $table->string('name');
+            $table->string('sector');
             $table->string('asset_type');
             $table->decimal('current_price', 15, 2);
             $table->dateTime('price_updated_at')->nullable();
             $table->timestamps();
-            $table->unique(['company_id', 'ticker']);
         });
 
         Schema::create('wallets', function (Blueprint $table): void {
@@ -67,6 +57,5 @@ return new class extends Migration
         Schema::dropIfExists('wallet_assets');
         Schema::dropIfExists('wallets');
         Schema::dropIfExists('assets');
-        Schema::dropIfExists('companies');
     }
 };

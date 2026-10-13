@@ -6,7 +6,6 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Models\Asset;
-use App\Models\Company;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletAsset;
@@ -54,7 +53,7 @@ class WalletManagementTest extends TestCase
         $response = $this->actingAs($client)->get(route('wallets.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn($page) => $page
             ->component('wallets/index')
             ->where('mode', 'manage')
             ->has('wallets', 1)
@@ -68,15 +67,10 @@ class WalletManagementTest extends TestCase
         $client = $this->clientFor($analyst);
         $wallet = Wallet::factory()->for($client)->create();
 
-        $company = Company::query()->create([
-            'name' => 'Petrobras',
-            'code' => 'PETR4',
-            'sector' => 'Petróleo, Gás e Biocombustíveis',
-        ]);
-
         $asset = Asset::query()->create([
-            'company_id' => $company->getKey(),
             'ticker' => 'PETR4',
+            'name' => 'Petrobras',
+            'sector' => 'Petróleo, Gás e Biocombustíveis',
             'asset_type' => 'pn',
             'current_price' => 30,
         ]);
@@ -90,7 +84,7 @@ class WalletManagementTest extends TestCase
 
         $response = $this->actingAs($client)->get(route('wallets.index'));
 
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn($page) => $page
             ->where('wallets.0.total_value', 300)
             ->where('totalValue', 300));
     }
@@ -161,7 +155,7 @@ class WalletManagementTest extends TestCase
         $response = $this->actingAs($analyst)->get(route('clients.wallets.index', $client));
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn($page) => $page
             ->component('wallets/index')
             ->where('mode', 'view')
             ->where('client.id', $client->getKey())

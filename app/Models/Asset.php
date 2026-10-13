@@ -6,7 +6,6 @@ namespace App\Models;
 
 use App\Enums\AssetType;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Asset extends Model
 {
@@ -14,8 +13,9 @@ class Asset extends Model
      * @var list<string>
      */
     protected $fillable = [
-        'company_id',
         'ticker',
+        'name',
+        'sector',
         'asset_type',
         'current_price',
         'price_updated_at',
@@ -29,12 +29,4 @@ class Asset extends Model
         'current_price' => 'decimal:2',
         'price_updated_at' => 'datetime',
     ];
-
-    /**
-     * @return BelongsTo<Company, $this>
-     */
-    public function company(): BelongsTo
-    {
-        return $this->belongsTo(Company::class);
-    }
 }
