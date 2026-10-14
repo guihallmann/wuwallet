@@ -49,5 +49,31 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ]);
         }
+
+        $analystId = DB::table('users')->where('email', $analystEmail)->value('id');
+
+        $clients = [
+            ['name' => 'Cliente Um', 'email' => 'cliente1@email.com'],
+            ['name' => 'Cliente Dois', 'email' => 'cliente2@email.com'],
+            ['name' => 'Cliente Três', 'email' => 'cliente3@email.com'],
+        ];
+
+        foreach ($clients as $client) {
+            if (DB::table('users')->where('email', $client['email'])->exists()) {
+                continue;
+            }
+
+            DB::table('users')->insert([
+                'id' => (string) Str::uuid(),
+                'manager_id' => $analystId,
+                'role' => UserRole::CLIENT->value,
+                'name' => $client['name'],
+                'password' => Hash::make('password'),
+                'email' => $client['email'],
+                'email_verified_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }
