@@ -1,26 +1,73 @@
-import { Head } from '@inertiajs/react';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { ArrowRight } from 'lucide-react';
+import { getRoleNavigationItems } from '@/lib/role-navigation';
 import { dashboard } from '@/routes';
 
 export default function Dashboard() {
+    const { auth } = usePage().props;
+    const navigationItems = getRoleNavigationItems(auth.user?.role);
+
     return (
         <>
             <Head title="Dashboard" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-                    <div className="border-sidebar-border/70 dark:border-sidebar-border relative aspect-video overflow-hidden rounded-xl border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="border-sidebar-border/70 dark:border-sidebar-border relative aspect-video overflow-hidden rounded-xl border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
-                    <div className="border-sidebar-border/70 dark:border-sidebar-border relative aspect-video overflow-hidden rounded-xl border">
-                        <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                    </div>
+            <div className="flex flex-1 flex-col gap-8 p-4 md:p-8">
+                <div className="space-y-2">
+                    <h1 className="text-2xl font-semibold tracking-tight">
+                        Olá, {auth.user?.name}
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Acesse rapidamente as páginas disponíveis para o seu
+                        perfil.
+                    </p>
                 </div>
-                <div className="border-sidebar-border/70 dark:border-sidebar-border relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border md:min-h-min">
-                    <PlaceholderPattern className="absolute inset-0 size-full stroke-neutral-900/20 dark:stroke-neutral-100/20" />
-                </div>
+
+                <section
+                    aria-labelledby="dashboard-shortcuts"
+                    className="space-y-4"
+                >
+                    <h2
+                        id="dashboard-shortcuts"
+                        className="text-lg font-semibold tracking-tight"
+                    >
+                        Acesso rápido
+                    </h2>
+
+                    {navigationItems.length > 0 ? (
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {navigationItems.map((item) => {
+                                const Icon = item.icon;
+
+                                return (
+                                    <Link
+                                        key={item.title}
+                                        href={item.href}
+                                        className="border-border bg-card hover:bg-muted/50 focus-visible:ring-ring flex min-h-36 items-center justify-between gap-4 rounded-xl border p-5 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            {Icon && (
+                                                <span className="bg-primary/10 text-primary flex size-11 shrink-0 items-center justify-center rounded-lg">
+                                                    <Icon className="size-5" />
+                                                </span>
+                                            )}
+                                            <span className="font-medium">
+                                                {item.title}
+                                            </span>
+                                        </div>
+                                        <ArrowRight
+                                            aria-hidden="true"
+                                            className="text-muted-foreground size-4 shrink-0"
+                                        />
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-muted-foreground rounded-xl border p-5 text-sm">
+                            Nenhuma página adicional está disponível para este
+                            perfil.
+                        </p>
+                    )}
+                </section>
             </div>
         </>
     );

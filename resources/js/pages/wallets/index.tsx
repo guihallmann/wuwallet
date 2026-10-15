@@ -1,10 +1,11 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Plus, Repeat2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { index as clientWalletsIndex } from '@/routes/clients/wallets';
 import { index as usersIndex } from '@/routes/users';
 import { create, edit, index } from '@/routes/wallets';
+import { create as createTransaction } from '@/routes/transactions';
 
 type WalletRow = {
     id: string;
@@ -62,12 +63,20 @@ export default function WalletsIndex(props: Props) {
                     </div>
 
                     {mode === 'manage' && (
-                        <Button asChild>
-                            <Link href={create()}>
-                                <Plus />
-                                Nova carteira
-                            </Link>
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                            <Button asChild variant="outline">
+                                <Link href={createTransaction()}>
+                                    <Repeat2 />
+                                    Registrar movimentação
+                                </Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href={create()}>
+                                    <Plus />
+                                    Nova carteira
+                                </Link>
+                            </Button>
+                        </div>
                     )}
                 </div>
 
