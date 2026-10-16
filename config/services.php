@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'brapi' => [
+        'base_url' => env('BRAPI_BASE_URL', 'https://brapi.dev'),
+        // Optional: without a key brapi allows 20 requests/minute per IP.
+        'key' => env('BRAPI_API_KEY'),
+        'timeout' => (int) env('BRAPI_TIMEOUT', 15),
+        'connect_timeout' => (int) env('BRAPI_CONNECT_TIMEOUT', 5),
+        'max_attempts' => (int) env('BRAPI_MAX_ATTEMPTS', 4),
+        'page_size' => 2000,
+        'max_pages' => 10,
+        'page_delay_ms' => 3500,
+        'max_retry_after_seconds' => 120,
+    ],
+
 ];

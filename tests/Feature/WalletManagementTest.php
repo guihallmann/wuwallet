@@ -71,7 +71,6 @@ class WalletManagementTest extends TestCase
             'ticker' => 'PETR4',
             'name' => 'Petrobras',
             'sector' => 'Petróleo, Gás e Biocombustíveis',
-            'asset_type' => 'pn',
             'current_price' => 30,
         ]);
 

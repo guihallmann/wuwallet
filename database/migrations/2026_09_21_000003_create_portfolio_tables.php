@@ -15,7 +15,6 @@ return new class extends Migration
             $table->string('ticker')->unique();
             $table->string('name');
             $table->string('sector');
-            $table->string('asset_type');
             $table->decimal('current_price', 15, 2);
             $table->dateTime('price_updated_at')->nullable();
             $table->timestamps();
