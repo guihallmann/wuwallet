@@ -1,5 +1,10 @@
 import { Form, Head, Link } from '@inertiajs/react';
+import { useState } from 'react';
 import WalletController from '@/actions/App/Http/Controllers/WalletController';
+import AssetAllocationField, {
+    isAllocationComplete,
+} from '@/components/asset-allocation-field';
+import type { AllocationRow } from '@/components/asset-allocation-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +13,15 @@ import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { index } from '@/routes/wallets';
 
-export default function WalletsCreate() {
+type Props = {
+    // Lista de setores vinda do backend (valor padrão evita quebrar enquanto ela não existir)
+    sectors?: string[];
+};
+
+export default function WalletsCreate({ sectors = [] }: Props) {
+    // Ativos escolhidos até agora (só existem na tela até enviar o formulário)
+    const [rows, setRows] = useState<AllocationRow[]>([]);
+
     return (
         <>
             <Head title="Nova carteira" />
@@ -51,8 +64,21 @@ export default function WalletsCreate() {
                                     />
                                 </div>
 
+                                <AssetAllocationField
+                                    rows={rows}
+                                    onChange={setRows}
+                                    sectors={sectors}
+                                    errors={errors}
+                                />
+
                                 <div className="flex items-center gap-3">
-                                    <Button type="submit" disabled={processing}>
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            processing ||
+                                            !isAllocationComplete(rows)
+                                        }
+                                    >
                                         {processing && <Spinner />}
                                         Criar carteira
                                     </Button>

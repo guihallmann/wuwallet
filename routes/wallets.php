@@ -6,6 +6,9 @@ use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
+    Route::get('assets/search', [WalletController::class, 'searchAssets'])
+        ->name('assets.search');
+
     Route::resource('wallets', WalletController::class)
         ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
 

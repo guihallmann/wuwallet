@@ -11,6 +11,11 @@ type WalletRow = {
     name: string;
     objective_text: string | null;
     total_value: number;
+    allocation: {
+        ticker: string;
+        name: string;
+        target_percentage: string;
+    }[];
 };
 
 type Props =
@@ -79,6 +84,9 @@ export default function WalletsIndex(props: Props) {
                                 <th className="px-4 py-3 font-medium">
                                     Objetivo
                                 </th>
+                                <th className="px-4 py-3 font-medium">
+                                    Alocação
+                                </th>
                                 <th className="px-4 py-3 text-right font-medium">
                                     Valor
                                 </th>
@@ -93,7 +101,7 @@ export default function WalletsIndex(props: Props) {
                             {wallets.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={mode === 'manage' ? 4 : 3}
+                                        colSpan={mode === 'manage' ? 5 : 4}
                                         className="text-muted-foreground px-4 py-8 text-center"
                                     >
                                         Nenhuma carteira cadastrada.
@@ -110,6 +118,20 @@ export default function WalletsIndex(props: Props) {
                                         </td>
                                         <td className="text-muted-foreground px-4 py-3">
                                             {wallet.objective_text ?? '—'}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {wallet.allocation.map((asset) => (
+                                                    <span
+                                                        key={asset.ticker}
+                                                        title={asset.name}
+                                                        className="bg-muted rounded-md px-2 py-1 text-xs"
+                                                    >
+                                                        {asset.ticker}{' '}
+                                                        {Number(asset.target_percentage).toFixed(2)}%
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             {formatCurrency(wallet.total_value)}
