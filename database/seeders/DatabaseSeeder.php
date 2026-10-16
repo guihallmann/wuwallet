@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Enums\UserRole;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -74,6 +75,16 @@ class DatabaseSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+        }
+
+        // Falha na brapi (rede/limite) não deve impedir o restante do seed.
+        $exitCode = Artisan::call('assets:sync');
+        $output = trim(Artisan::output());
+
+        if ($exitCode === 0) {
+            $this->command?->info($output);
+        } else {
+            $this->command?->warn($output . ' Rode `php artisan assets:sync` manualmente depois.');
         }
     }
 }
