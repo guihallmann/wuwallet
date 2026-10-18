@@ -29,6 +29,7 @@ export default defineConfig({
         }),
     ]),
     server: {
+        origin: 'http://localhost:5173',
         watch: {
             ignored: [
                 '**/.agents/**',

@@ -22,12 +22,12 @@ O WuWallet é uma aplicação Laravel com frontend React (Inertia). Este guia ex
 
 ### Opção A (local)
 
-| Ferramenta | Versão | Observação |
-| --- | --- | --- |
-| Git | qualquer recente | https://git-scm.com |
-| PHP | **8.4 ou superior** | extensões: `mbstring`, `openssl`, `pdo_sqlite`, `sqlite3`, `curl`, `fileinfo`, `zip`, `intl`, `xml`, `ctype`, `tokenizer`, `bcmath` |
-| Composer | 2.x | https://getcomposer.org |
-| Node.js | 22 LTS ou superior | já inclui o `npm` |
+| Ferramenta | Versão              | Observação                                                                                                                          |
+| ---------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Git        | qualquer recente    | https://git-scm.com                                                                                                                 |
+| PHP        | **8.4 ou superior** | extensões: `mbstring`, `openssl`, `pdo_sqlite`, `sqlite3`, `curl`, `fileinfo`, `zip`, `intl`, `xml`, `ctype`, `tokenizer`, `bcmath` |
+| Composer   | 2.x                 | https://getcomposer.org                                                                                                             |
+| Node.js    | 22 LTS ou superior  | já inclui o `npm`                                                                                                                   |
 
 No Windows, a forma mais fácil de ter PHP + Composer + Node é instalar o [Laravel Herd](https://herd.laravel.com/windows). Outra opção é o [XAMPP](https://www.apachefriends.org) com PHP 8.4, adicionando o PHP ao `PATH`.
 
@@ -90,7 +90,7 @@ MAIL_MAILER=log
 ### 4. Popular o banco (opcional, mas recomendado)
 
 ```bash
-php artisan migrate:fresh --seed
+php artisan migrate --seed
 ```
 
 ### 5. Rodar o projeto
@@ -153,7 +153,7 @@ O prompt vai mudar para algo como `sail@abc123:/var/www/html$`. Para sair do con
 
 ```bash
 php artisan key:generate
-php artisan migrate:fresh --seed
+php artisan migrate --seed
 npm install
 npm run build
 ```
@@ -306,14 +306,17 @@ npm run build              # gera o frontend para produção
 
 ## Contas de teste
 
-Criadas por `php artisan migrate:fresh --seed`:
+Criadas por `php artisan db:seed` ou `php artisan migrate --seed`:
 
-| Perfil | E-mail | Senha |
-| --- | --- | --- |
-| Gestor | `manager@email.com` | `password` |
+| Perfil   | E-mail               | Senha      |
+| -------- | -------------------- | ---------- |
+| Gestor   | `manager@email.com`  | `password` |
 | Analista | `analista@email.com` | `password` |
+| Cliente  | `cliente1@email.com` | `password` |
 
 Os dados do gestor podem ser alterados no `.env` com `MANAGER_MASTER_EMAIL`, `MANAGER_MASTER_NAME` e `MANAGER_MASTER_PASSWORD`.
+
+O menu **Movimentações** e o formulário de compra/venda estão disponíveis no perfil de cliente.
 
 ## Banco de dados
 
@@ -321,7 +324,9 @@ O banco de desenvolvimento é o **SQLite** (arquivo `database/database.sqlite`),
 
 A sincronização de ativos usa a API da brapi. A chave é opcional (`BRAPI_API_KEY` no `.env`); sem ela o limite é de 20 requisições por minuto.
 
-O seeder (`php artisan db:seed` ou `migrate:fresh --seed`) já executa `assets:sync` ao final para popular a tabela de ativos, então é necessário ter internet. Se a brapi falhar, o seed continua e mostra um aviso; nesse caso rode `php artisan assets:sync` depois.
+O seeder (`php artisan db:seed` ou `migrate --seed`) cria os usuários de teste e executa `assets:sync` para popular a tabela de ativos, então é necessário ter internet. Se a brapi falhar, o seed continua e mostra um aviso; nesse caso rode `php artisan assets:sync` depois. O seeder não cria carteiras nem movimentações: crie uma carteira pela aplicação antes de registrar uma compra ou venda.
+
+> `migrate --seed` preserva os dados existentes e aplica apenas migrations pendentes. `migrate:fresh --seed` apaga todas as tabelas antes de recriá-las; use somente se quiser apagar o banco local.
 
 ## Solução de problemas
 

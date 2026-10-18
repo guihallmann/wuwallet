@@ -1,10 +1,11 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Plus, Repeat2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { index as clientWalletsIndex } from '@/routes/clients/wallets';
 import { index as usersIndex } from '@/routes/users';
 import { create, edit, index } from '@/routes/wallets';
+import { create as createTransaction } from '@/routes/transactions';
 
 type WalletRow = {
     id: string;
@@ -67,12 +68,20 @@ export default function WalletsIndex(props: Props) {
                     </div>
 
                     {mode === 'manage' && (
-                        <Button asChild>
-                            <Link href={create()}>
-                                <Plus />
-                                Nova carteira
-                            </Link>
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                            <Button asChild variant="outline">
+                                <Link href={createTransaction()}>
+                                    <Repeat2 />
+                                    Registrar movimentação
+                                </Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href={create()}>
+                                    <Plus />
+                                    Nova carteira
+                                </Link>
+                            </Button>
+                        </div>
                     )}
                 </div>
 
@@ -121,16 +130,21 @@ export default function WalletsIndex(props: Props) {
                                         </td>
                                         <td className="px-4 py-3">
                                             <div className="flex flex-wrap gap-1.5">
-                                                {wallet.allocation.map((asset) => (
-                                                    <span
-                                                        key={asset.ticker}
-                                                        title={asset.name}
-                                                        className="bg-muted rounded-md px-2 py-1 text-xs"
-                                                    >
-                                                        {asset.ticker}{' '}
-                                                        {Number(asset.target_percentage).toFixed(2)}%
-                                                    </span>
-                                                ))}
+                                                {wallet.allocation.map(
+                                                    (asset) => (
+                                                        <span
+                                                            key={asset.ticker}
+                                                            title={asset.name}
+                                                            className="bg-muted rounded-md px-2 py-1 text-xs"
+                                                        >
+                                                            {asset.ticker}{' '}
+                                                            {Number(
+                                                                asset.target_percentage,
+                                                            ).toFixed(2)}
+                                                            %
+                                                        </span>
+                                                    ),
+                                                )}
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-right">
