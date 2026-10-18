@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateWalletRequest;
 use App\Models\Asset;
 use App\Models\User;
 use App\Models\Wallet;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -30,7 +31,7 @@ class WalletController extends Controller
         return Inertia::render('wallets/index', [
             'mode' => 'manage',
             'wallets' => $this->mapWallets($wallets),
-            'totalValue' => $wallets->sum(fn(Wallet $wallet) => $wallet->totalValue()),
+            'totalValue' => $wallets->sum(fn (Wallet $wallet) => $wallet->totalValue()),
         ]);
     }
 
@@ -46,7 +47,7 @@ class WalletController extends Controller
             'mode' => 'view',
             'client' => $client->only(['id', 'name']),
             'wallets' => $this->mapWallets($wallets),
-            'totalValue' => $wallets->sum(fn(Wallet $wallet) => $wallet->totalValue()),
+            'totalValue' => $wallets->sum(fn (Wallet $wallet) => $wallet->totalValue()),
         ]);
     }
 
@@ -59,7 +60,7 @@ class WalletController extends Controller
         ]);
     }
 
-    public function searchAssets(Request $request): \Illuminate\Http\JsonResponse
+    public function searchAssets(Request $request): JsonResponse
     {
         Gate::authorize('create', Wallet::class);
 
@@ -118,6 +119,7 @@ class WalletController extends Controller
                     'ticker' => $walletAsset->asset->ticker,
                     'name' => $walletAsset->asset->name,
                     'target_percentage' => $walletAsset->target_percentage,
+                    'current_quantity' => $walletAsset->current_quantity,
                 ])->values(),
             ],
             'sectors' => $this->assetSectors(),
@@ -127,6 +129,12 @@ class WalletController extends Controller
     public function update(UpdateWalletRequest $request, Wallet $wallet): RedirectResponse
     {
         DB::transaction(function () use ($request, $wallet): void {
+            $wallet = $request->user()
+                ->wallets()
+                ->whereKey($wallet->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
             $wallet->update([
                 'name' => $request->validated('name'),
                 'objective_text' => $request->validated('objective_text'),
@@ -174,12 +182,12 @@ class WalletController extends Controller
 
     /**
      * @param  Collection<int, Wallet>  $wallets
-     * @return list<array{id: string, name: string, objective_text: string|null, total_value: float, allocation: list<array{ticker: string, name: string, target_percentage: string}>}>
+     * @return list<array{id: string, name: string, objective_text: string|null, total_value: float, allocation: list<array{ticker: string, name: string, target_percentage: string, current_quantity: int}>}>
      */
     private function mapWallets(Collection $wallets): array
     {
         return array_values($wallets
-            ->map(fn(Wallet $wallet) => [
+            ->map(fn (Wallet $wallet) => [
                 'id' => $wallet->id,
                 'name' => $wallet->name,
                 'objective_text' => $wallet->objective_text,
@@ -190,6 +198,7 @@ class WalletController extends Controller
                         'ticker' => $walletAsset->asset->ticker,
                         'name' => $walletAsset->asset->name,
                         'target_percentage' => $walletAsset->target_percentage,
+                        'current_quantity' => $walletAsset->current_quantity,
                     ])
                     ->values()
                     ->all(),
@@ -200,8 +209,7 @@ class WalletController extends Controller
     /** @return list<string> */
     private function assetSectors(): array
     {
-        return Cache::remember('asset_sectors_v2', now()->addMinutes(5), fn (): array =>
-            Asset::query()->select('sector')->distinct()->orderBy('sector')->pluck('sector')->all()
+        return Cache::remember('asset_sectors_v2', now()->addMinutes(5), fn (): array => Asset::query()->select('sector')->distinct()->orderBy('sector')->pluck('sector')->all()
         );
     }
 }

@@ -5,7 +5,7 @@ import { formatCurrency } from '@/lib/utils';
 import { index as clientWalletsIndex } from '@/routes/clients/wallets';
 import { index as usersIndex } from '@/routes/users';
 import { create, edit, index } from '@/routes/wallets';
-import { create as createTransaction } from '@/routes/transactions';
+import { index as walletTransactionsIndex } from '@/routes/wallets/transactions';
 
 type WalletRow = {
     id: string;
@@ -16,6 +16,7 @@ type WalletRow = {
         ticker: string;
         name: string;
         target_percentage: string;
+        current_quantity: number;
     }[];
 };
 
@@ -68,20 +69,12 @@ export default function WalletsIndex(props: Props) {
                     </div>
 
                     {mode === 'manage' && (
-                        <div className="flex flex-wrap gap-2">
-                            <Button asChild variant="outline">
-                                <Link href={createTransaction()}>
-                                    <Repeat2 />
-                                    Registrar movimentação
-                                </Link>
-                            </Button>
-                            <Button asChild>
-                                <Link href={create()}>
-                                    <Plus />
-                                    Nova carteira
-                                </Link>
-                            </Button>
-                        </div>
+                        <Button asChild>
+                            <Link href={create()}>
+                                <Plus />
+                                Nova carteira
+                            </Link>
+                        </Button>
                     )}
                 </div>
 
@@ -97,6 +90,9 @@ export default function WalletsIndex(props: Props) {
                                     Alocação
                                 </th>
                                 <th className="px-4 py-3 text-right font-medium">
+                                    Quantidade
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
                                     Valor
                                 </th>
                                 {mode === 'manage' && (
@@ -110,7 +106,7 @@ export default function WalletsIndex(props: Props) {
                             {wallets.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={mode === 'manage' ? 5 : 4}
+                                        colSpan={mode === 'manage' ? 6 : 5}
                                         className="text-muted-foreground px-4 py-8 text-center"
                                     >
                                         Nenhuma carteira cadastrada.
@@ -148,21 +144,58 @@ export default function WalletsIndex(props: Props) {
                                             </div>
                                         </td>
                                         <td className="px-4 py-3 text-right">
+                                            <div className="flex flex-wrap justify-end gap-1.5">
+                                                {wallet.allocation.map(
+                                                    (asset) => (
+                                                        <span
+                                                            key={asset.ticker}
+                                                            title={asset.name}
+                                                            className="bg-muted rounded-md px-2 py-1 text-xs"
+                                                        >
+
+                                                            {asset.current_quantity.toLocaleString(
+                                                                'pt-BR',
+                                                            )}{' '}
+                                                            ações
+                                                        </span>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
                                             {formatCurrency(wallet.total_value)}
                                         </td>
                                         {mode === 'manage' && (
                                             <td className="px-4 py-3 text-right">
-                                                <Button
-                                                    asChild
-                                                    variant="outline"
-                                                    size="sm"
-                                                >
-                                                    <Link
-                                                        href={edit(wallet.id)}
+                                                <div className="flex flex-col items-stretch gap-2">
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="sm"
                                                     >
-                                                        Editar
-                                                    </Link>
-                                                </Button>
+                                                        <Link
+                                                            href={edit(
+                                                                wallet.id,
+                                                            )}
+                                                        >
+                                                            Editar
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="sm"
+                                                    >
+                                                        <Link
+                                                            href={walletTransactionsIndex(
+                                                                wallet.id,
+                                                            )}
+                                                        >
+                                                            <Repeat2 />
+                                                            Movimentações
+                                                        </Link>
+                                                    </Button>
+                                                </div>
                                             </td>
                                         )}
                                     </tr>

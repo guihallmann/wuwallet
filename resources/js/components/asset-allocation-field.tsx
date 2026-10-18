@@ -5,11 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCurrency } from '@/lib/utils';
-
-// ATENÇÃO: confira o caminho real da rota de busca com:
-//   ./vendor/bin/sail artisan route:list --name=assets
-// e ajuste aqui. Quando a rota existir, dá pra trocar por um helper do Wayfinder.
-export const ASSET_SEARCH_URL = '/assets/search';
+import { search as searchAssets } from '@/routes/assets';
 
 const TOTAL_CENTS = 10000; // 100,00% em centésimos
 const MAX_ASSETS = 50;
@@ -21,6 +17,7 @@ export type AllocationRow = {
     ticker: string;
     name: string;
     target_percentage: string;
+    current_quantity?: number;
 };
 
 // Formato que o endpoint de busca devolve (conforme o plano do projeto)
@@ -32,12 +29,29 @@ type SearchResult = {
     current_price: string | number;
 };
 
+function isSearchResult(value: unknown): value is SearchResult {
+    return (
+        value !== null &&
+        typeof value === 'object' &&
+        'id' in value &&
+        typeof value.id === 'number' &&
+        'ticker' in value &&
+        typeof value.ticker === 'string' &&
+        'name' in value &&
+        typeof value.name === 'string' &&
+        'sector' in value &&
+        typeof value.sector === 'string' &&
+        'current_price' in value &&
+        (typeof value.current_price === 'number' ||
+            typeof value.current_price === 'string')
+    );
+}
+
 type Props = {
     rows: AllocationRow[];
     onChange: (rows: AllocationRow[]) => void;
     sectors: string[];
     errors: Record<string, string>;
-    searchUrl?: string;
 };
 
 // Converte "33.33" em 3333 (inteiro). Somar inteiros evita erro de float.
@@ -65,7 +79,6 @@ export default function AssetAllocationField({
     onChange,
     sectors,
     errors,
-    searchUrl = ASSET_SEARCH_URL,
 }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -74,6 +87,7 @@ export default function AssetAllocationField({
     const [sector, setSector] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [loading, setLoading] = useState(false);
+    const [searchError, setSearchError] = useState<string | null>(null);
 
     const totalCents = allocationTotalCents(rows);
     const reachedLimit = rows.length >= MAX_ASSETS;
@@ -104,23 +118,59 @@ export default function AssetAllocationField({
             }
 
             setLoading(true);
+            setSearchError(null);
 
             try {
+                const queryString = params.toString();
                 const response = await fetch(
-                    `${searchUrl}?${params.toString()}`,
+                    `${searchAssets.url()}${queryString ? `?${queryString}` : ''}`,
                     {
                         headers: { Accept: 'application/json' },
                         signal: controller.signal,
                     },
                 );
 
-                if (response.ok) {
-                    const body = await response.json();
-                    // aceita tanto uma lista direta quanto { data: [...] }
-                    setResults(Array.isArray(body) ? body : (body.data ?? []));
+                if (!response.ok) {
+                    const message =
+                        response.status === 401
+                            ? 'Sua sessão expirou. Atualize a página e tente novamente.'
+                            : response.status === 403
+                              ? 'Você não tem permissão para buscar ativos.'
+                              : `Não foi possível buscar os ativos (erro ${response.status}).`;
+
+                    throw new Error(message);
                 }
-            } catch {
-                // requisição cancelada (digitou de novo) ou erro de rede: ignora
+
+                const body: unknown = await response.json();
+                const items: unknown[] | null = Array.isArray(body)
+                    ? body
+                    : body !== null &&
+                        typeof body === 'object' &&
+                        'data' in body &&
+                        Array.isArray(body.data)
+                      ? body.data
+                      : null;
+
+                if (items === null || !items.every(isSearchResult)) {
+                    throw new Error(
+                        'O servidor retornou uma resposta de busca inválida.',
+                    );
+                }
+
+                setResults(items);
+            } catch (error) {
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                setResults([]);
+                setSearchError(
+                    error instanceof TypeError
+                        ? 'Falha de conexão ao buscar ativos. Verifique a conexão e tente novamente.'
+                        : error instanceof Error
+                          ? error.message
+                          : 'Falha inesperada ao buscar ativos. Tente novamente.',
+                );
             } finally {
                 if (!controller.signal.aborted) {
                     setLoading(false);
@@ -132,7 +182,7 @@ export default function AssetAllocationField({
             clearTimeout(timeout);
             controller.abort();
         };
-    }, [open, query, sector, searchUrl]);
+    }, [open, query, sector]);
 
     // Fecha o dropdown ao clicar fora dele
     useEffect(() => {
@@ -163,6 +213,7 @@ export default function AssetAllocationField({
                 ticker: asset.ticker,
                 name: asset.name,
                 target_percentage: '',
+                current_quantity: 0,
             },
         ]);
 
@@ -173,9 +224,7 @@ export default function AssetAllocationField({
     function updatePercentage(position: number, value: string) {
         onChange(
             rows.map((row, index) =>
-                index === position
-                    ? { ...row, target_percentage: value }
-                    : row,
+                index === position ? { ...row, target_percentage: value } : row,
             ),
         );
     }
@@ -261,11 +310,23 @@ export default function AssetAllocationField({
                             </p>
                         )}
 
-                        {!loading && available.length === 0 && (
-                            <p className="text-muted-foreground px-3 py-2 text-sm">
-                                Nenhum ativo encontrado.
+                        {!loading && searchError !== null && (
+                            <p
+                                role="alert"
+                                className="text-destructive px-3 py-2 text-sm"
+                            >
+                                {searchError}
                             </p>
                         )}
+
+                        {!loading &&
+                            searchError === null &&
+                            available.length === 0 && (
+                                <p className="text-muted-foreground px-3 py-2 text-sm">
+                                    Nenhum ativo encontrado. Verifique se o
+                                    catálogo foi sincronizado.
+                                </p>
+                            )}
 
                         {available.map((asset) => (
                             <button
@@ -283,7 +344,9 @@ export default function AssetAllocationField({
                                     </span>
                                 </span>
                                 <span className="text-muted-foreground text-xs">
-                                    {formatCurrency(Number(asset.current_price))}
+                                    {formatCurrency(
+                                        Number(asset.current_price),
+                                    )}
                                 </span>
                             </button>
                         ))}
@@ -319,7 +382,10 @@ export default function AssetAllocationField({
                                 className="w-28 pr-7"
                                 value={row.target_percentage}
                                 onChange={(event) =>
-                                    updatePercentage(position, event.target.value)
+                                    updatePercentage(
+                                        position,
+                                        event.target.value,
+                                    )
                                 }
                                 onKeyDown={(event) => {
                                     if (event.key === 'Enter') {
@@ -336,11 +402,23 @@ export default function AssetAllocationField({
                             type="button"
                             variant="ghost"
                             size="icon"
+                            disabled={(row.current_quantity ?? 0) > 0}
+                            title={
+                                (row.current_quantity ?? 0) > 0
+                                    ? 'Não é possível remover um ativo com saldo na carteira.'
+                                    : 'Remover ativo da carteira'
+                            }
                             onClick={() => removeAsset(position)}
                         >
                             <Trash2 />
                         </Button>
                     </div>
+                    {(row.current_quantity ?? 0) > 0 && (
+                        <p className="text-muted-foreground px-3 text-xs">
+                            Venda as {row.current_quantity} ações antes de
+                            remover este ativo da carteira.
+                        </p>
+                    )}
 
                     <InputError
                         message={errors[`assets.${position}.asset_id`]}

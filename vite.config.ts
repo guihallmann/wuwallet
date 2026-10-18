@@ -30,6 +30,9 @@ export default defineConfig({
     ]),
     server: {
         origin: 'http://localhost:5173',
+        cors: {
+            origin: /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
+        },
         watch: {
             ignored: [
                 '**/.agents/**',

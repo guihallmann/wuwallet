@@ -1,21 +1,20 @@
-import { useState } from 'react';
-import { Form, Head, Link } from '@inertiajs/react';
-import TransactionController from '@/actions/App/Http/Controllers/TransactionController';
+import { useEffect, useState } from 'react';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { index as walletsIndex } from '@/routes/wallets';
 import {
-    create as createWallet,
-    index as walletsIndex,
-} from '@/routes/wallets';
-import { create as createTransaction } from '@/routes/transactions';
+    create as createWalletTransaction,
+    index as walletTransactionsIndex,
+    store as storeWalletTransaction,
+} from '@/routes/wallets/transactions';
 
 type WalletOption = {
     id: string;
     name: string;
-    assetIds: number[];
     sellableAssetIds: number[];
 };
 
@@ -26,27 +25,36 @@ type AssetOption = {
 };
 
 type Props = {
-    wallets: WalletOption[];
+    wallet: WalletOption;
     assets: AssetOption[];
     today: string;
 };
 
-export default function TransactionsCreate({ wallets, assets, today }: Props) {
-    const [walletId, setWalletId] = useState(wallets[0]?.id ?? '');
+export default function TransactionsCreate({ wallet, assets, today }: Props) {
     const [assetId, setAssetId] = useState('');
     const [type, setType] = useState<'buy' | 'sell'>('buy');
-    const selectedWallet = wallets.find((wallet) => wallet.id === walletId);
+    useEffect(() => {
+        setLayoutProps({
+            breadcrumbs: [
+                { title: 'Carteiras', href: walletsIndex() },
+                {
+                    title: wallet.name,
+                    href: walletTransactionsIndex(wallet.id),
+                },
+                {
+                    title: 'Registrar movimentação',
+                    href: createWalletTransaction(wallet.id),
+                },
+            ],
+        });
+    }, [wallet.id, wallet.name]);
+
     const availableAssets =
         type === 'sell'
             ? assets.filter((asset) =>
-                  selectedWallet?.sellableAssetIds.includes(asset.id),
+                  wallet.sellableAssetIds.includes(asset.id),
               )
             : assets;
-    const selectedAsset = assets.find((asset) => String(asset.id) === assetId);
-    const isNewPosition =
-        type === 'buy' &&
-        selectedAsset !== undefined &&
-        !selectedWallet?.assetIds.includes(selectedAsset.id);
 
     return (
         <>
@@ -58,63 +66,26 @@ export default function TransactionsCreate({ wallets, assets, today }: Props) {
                         Registrar movimentação
                     </h1>
                     <p className="text-muted-foreground mt-1 text-sm">
-                        Registre uma compra ou venda de ativo em uma carteira. A
-                        cotação atual cadastrada para o ativo será salva com a
-                        movimentação.
+                        Carteira:{' '}
+                        <span className="font-medium">{wallet.name}</span>. A
+                        cotação atual do ativo será salva com a movimentação.
                     </p>
                 </div>
 
-                {wallets.length === 0 ? (
-                    <div className="border-border bg-card flex max-w-2xl flex-col gap-4 rounded-xl border p-6">
-                        <p className="text-muted-foreground text-sm">
-                            Crie uma carteira antes de registrar uma
-                            movimentação.
-                        </p>
-                        <Button asChild className="w-fit">
-                            <Link href={createWallet()}>Criar carteira</Link>
-                        </Button>
-                    </div>
-                ) : assets.length === 0 ? (
+                {assets.length === 0 ? (
                     <p className="border-border text-muted-foreground max-w-2xl rounded-xl border p-6 text-sm">
-                        Nenhum ativo está cadastrado para movimentação.
+                        Nenhum ativo está cadastrado nesta carteira. Edite a
+                        carteira para adicionar ativos antes de registrar uma
+                        movimentação.
                     </p>
                 ) : (
                     <div className="border-border bg-card max-w-2xl rounded-xl border p-6 shadow-sm">
                         <Form
-                            {...TransactionController.store.form()}
+                            {...storeWalletTransaction.form(wallet.id)}
                             className="flex flex-col gap-6"
                         >
                             {({ errors, processing }) => (
                                 <>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="wallet_id">
-                                            Carteira
-                                        </Label>
-                                        <select
-                                            id="wallet_id"
-                                            name="wallet_id"
-                                            value={walletId}
-                                            onChange={(event) => {
-                                                setWalletId(event.target.value);
-                                                setAssetId('');
-                                            }}
-                                            required
-                                            className="border-input bg-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2"
-                                        >
-                                            {wallets.map((wallet) => (
-                                                <option
-                                                    key={wallet.id}
-                                                    value={wallet.id}
-                                                >
-                                                    {wallet.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <InputError
-                                            message={errors.wallet_id}
-                                        />
-                                    </div>
-
                                     <div className="grid gap-2">
                                         <Label htmlFor="transaction_type">
                                             Tipo
@@ -210,32 +181,6 @@ export default function TransactionsCreate({ wallets, assets, today }: Props) {
                                         />
                                     </div>
 
-                                    {isNewPosition && (
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="target_percentage">
-                                                Meta de alocação (%)
-                                            </Label>
-                                            <Input
-                                                id="target_percentage"
-                                                name="target_percentage"
-                                                type="number"
-                                                min="0.01"
-                                                max="100"
-                                                step="0.01"
-                                                required
-                                            />
-                                            <p className="text-muted-foreground text-sm">
-                                                Defina a meta desejada para este
-                                                ativo na carteira.
-                                            </p>
-                                            <InputError
-                                                message={
-                                                    errors.target_percentage
-                                                }
-                                            />
-                                        </div>
-                                    )}
-
                                     <div className="flex flex-wrap items-center gap-3">
                                         <Button
                                             type="submit"
@@ -254,7 +199,11 @@ export default function TransactionsCreate({ wallets, assets, today }: Props) {
                                             type="button"
                                             variant="ghost"
                                         >
-                                            <Link href={walletsIndex()}>
+                                            <Link
+                                                href={walletTransactionsIndex(
+                                                    wallet.id,
+                                                )}
+                                            >
                                                 Cancelar
                                             </Link>
                                         </Button>
@@ -268,16 +217,3 @@ export default function TransactionsCreate({ wallets, assets, today }: Props) {
         </>
     );
 }
-
-TransactionsCreate.layout = {
-    breadcrumbs: [
-        {
-            title: 'Carteiras',
-            href: walletsIndex(),
-        },
-        {
-            title: 'Registrar movimentação',
-            href: createTransaction(),
-        },
-    ],
-};

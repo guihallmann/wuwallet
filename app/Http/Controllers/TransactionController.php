@@ -7,66 +7,86 @@ namespace App\Http\Controllers;
 use App\Enums\TransactionType;
 use App\Http\Requests\StoreTransactionRequest;
 use App\Models\Asset;
+use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\WalletAsset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TransactionController extends Controller
 {
-    public function create(): Response
+    public function index(Wallet $wallet): Response
     {
-        abort_unless(auth()->user()?->isClient(), 403);
+        Gate::authorize('viewTransactions', $wallet);
 
-        $wallets = auth()->user()
-            ->wallets()
-            ->with('assets:id,wallet_id,asset_id')
-            ->orderBy('name')
+        $transactions = $wallet->transactions()
+            ->with('asset:id,ticker,name')
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('created_at')
             ->get()
-            ->map(fn (Wallet $wallet): array => [
+            ->map(fn (Transaction $transaction): array => [
+                'id' => $transaction->getKey(),
+                'ticker' => $transaction->asset->ticker,
+                'asset_name' => $transaction->asset->name,
+                'transaction_type' => $transaction->transaction_type->value,
+                'quantity' => $transaction->quantity,
+                'unit_price' => $transaction->unit_price,
+                'transaction_date' => $transaction->transaction_date->toDateString(),
+            ])
+            ->values();
+
+        return Inertia::render('transactions/index', [
+            'wallet' => $wallet->only(['id', 'name']),
+            'transactions' => $transactions,
+        ]);
+    }
+
+    public function create(Wallet $wallet): Response
+    {
+        Gate::authorize('createTransaction', $wallet);
+
+        $wallet->load('assets.asset:id,ticker,name');
+        $walletAssets = $wallet->assets;
+        $assets = $walletAssets
+            ->map(fn (WalletAsset $walletAsset): array => [
+                'id' => $walletAsset->asset->id,
+                'ticker' => $walletAsset->asset->ticker,
+                'name' => $walletAsset->asset->name,
+            ])
+            ->sortBy('ticker')
+            ->values();
+
+        return Inertia::render('transactions/create', [
+            'wallet' => [
                 'id' => $wallet->id,
                 'name' => $wallet->name,
-                'assetIds' => $wallet->assets->pluck('asset_id')->map(fn ($id): int => (int) $id)->all(),
-                'sellableAssetIds' => $wallet->assets
+                'sellableAssetIds' => $walletAssets
                     ->filter(fn (WalletAsset $walletAsset): bool => $walletAsset->current_quantity > 0)
                     ->pluck('asset_id')
                     ->map(fn ($id): int => (int) $id)
                     ->all(),
-            ])
-            ->values();
-
-        $assets = Asset::query()
-            ->orderBy('ticker')
-            ->get(['id', 'ticker', 'name'])
-            ->map(fn (Asset $asset): array => [
-                'id' => $asset->id,
-                'ticker' => $asset->ticker,
-                'name' => $asset->name,
-            ])
-            ->values();
-
-        return Inertia::render('transactions/create', [
-            'wallets' => $wallets,
+            ],
             'assets' => $assets,
             'today' => today()->toDateString(),
         ]);
     }
 
-    public function store(StoreTransactionRequest $request): RedirectResponse
+    public function store(StoreTransactionRequest $request, Wallet $wallet): RedirectResponse
     {
         $data = $request->validated();
         $quantity = (int) $data['quantity'];
         $type = TransactionType::from($data['transaction_type']);
 
-        DB::transaction(function () use ($data, $quantity, $type, $request): void {
-            $wallet = Wallet::query()
-                ->where('user_id', $request->user()->getKey())
+        DB::transaction(function () use ($data, $quantity, $type, $request, $wallet): void {
+            $wallet = $request->user()
+                ->wallets()
+                ->whereKey($wallet->getKey())
                 ->lockForUpdate()
-                ->whereKey($data['wallet_id'])
                 ->firstOrFail();
 
             $asset = Asset::query()
@@ -86,15 +106,13 @@ class TransactionController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if ($type === TransactionType::SELL && $walletAsset === null) {
+            if ($walletAsset === null) {
                 throw ValidationException::withMessages([
-                    'asset_id' => __('Este ativo ainda não possui saldo nesta carteira.'),
+                    'asset_id' => __('Este ativo não está cadastrado nesta carteira.'),
                 ]);
             }
 
-            $currentQuantity = $walletAsset === null
-                ? 0
-                : $walletAsset->current_quantity;
+            $currentQuantity = $walletAsset->current_quantity;
 
             if ($type === TransactionType::SELL && $quantity > $currentQuantity) {
                 throw ValidationException::withMessages([
@@ -110,14 +128,6 @@ class TransactionController extends Controller
                 throw ValidationException::withMessages([
                     'quantity' => __('A quantidade informada excede o limite permitido para esta carteira.'),
                 ]);
-            }
-
-            if ($walletAsset === null) {
-                $walletAsset = new WalletAsset([
-                    'asset_id' => $asset->getKey(),
-                    'target_percentage' => $data['target_percentage'],
-                ]);
-                $wallet->assets()->save($walletAsset);
             }
 
             $walletAsset->current_quantity = $newQuantity;
@@ -137,6 +147,6 @@ class TransactionController extends Controller
             'message' => __('Movimentação registrada'),
         ]);
 
-        return to_route('wallets.index');
+        return to_route('wallets.transactions.index', $wallet);
     }
 }

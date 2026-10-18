@@ -28,6 +28,7 @@ type WalletAsset = {
     ticker: string;
     name: string;
     target_percentage: string | number;
+    current_quantity: number;
 };
 
 type Wallet = {
@@ -51,6 +52,7 @@ export default function WalletsEdit({ wallet, sectors = [] }: Props) {
             ticker: asset.ticker,
             name: asset.name,
             target_percentage: Number(asset.target_percentage).toFixed(2),
+            current_quantity: asset.current_quantity,
         })),
     );
 

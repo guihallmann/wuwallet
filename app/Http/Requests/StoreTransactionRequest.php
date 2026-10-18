@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\TransactionType;
+use App\Models\Wallet;
 use App\Models\WalletAsset;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,7 +16,10 @@ class StoreTransactionRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->isClient() ?? false;
+        $wallet = $this->route('wallet');
+
+        return $wallet instanceof Wallet
+            && ($this->user()?->can('createTransaction', $wallet) ?? false);
     }
 
     /**
@@ -24,16 +28,10 @@ class StoreTransactionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'wallet_id' => [
-                'required',
-                'uuid',
-                Rule::exists('wallets', 'id')->where('user_id', $this->user()?->getKey()),
-            ],
             'asset_id' => ['required', 'integer', 'exists:assets,id'],
             'transaction_type' => ['required', Rule::enum(TransactionType::class)],
             'quantity' => ['required', 'integer', 'min:1', 'max:4294967295'],
             'transaction_date' => ['required', 'date_format:Y-m-d', 'date_equals:today'],
-            'target_percentage' => ['nullable', 'numeric', 'between:0.01,100'],
         ];
     }
 
@@ -44,23 +42,19 @@ class StoreTransactionRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                if ($validator->errors()->hasAny(['wallet_id', 'asset_id', 'transaction_type'])) {
-                    return;
-                }
-
-                if ($this->input('transaction_type') !== TransactionType::BUY->value) {
+                if ($validator->errors()->hasAny(['asset_id', 'transaction_type'])) {
                     return;
                 }
 
                 $hasPosition = WalletAsset::query()
-                    ->where('wallet_id', $this->input('wallet_id'))
+                    ->where('wallet_id', $this->route('wallet')->getKey())
                     ->where('asset_id', $this->integer('asset_id'))
                     ->exists();
 
-                if (! $hasPosition && $this->input('target_percentage') === null) {
+                if (! $hasPosition) {
                     $validator->errors()->add(
-                        'target_percentage',
-                        __('Informe a meta de alocação para adicionar um novo ativo à carteira.'),
+                        'asset_id',
+                        __('Este ativo não está cadastrado nesta carteira.'),
                     );
                 }
             },

@@ -324,7 +324,11 @@ O banco de desenvolvimento é o **SQLite** (arquivo `database/database.sqlite`),
 
 A sincronização de ativos usa a API da brapi. A chave é opcional (`BRAPI_API_KEY` no `.env`); sem ela o limite é de 20 requisições por minuto.
 
-O seeder (`php artisan db:seed` ou `migrate --seed`) cria os usuários de teste e executa `assets:sync` para popular a tabela de ativos, então é necessário ter internet. Se a brapi falhar, o seed continua e mostra um aviso; nesse caso rode `php artisan assets:sync` depois. O seeder não cria carteiras nem movimentações: crie uma carteira pela aplicação antes de registrar uma compra ou venda.
+A busca de ativos ao criar ou editar uma carteira consulta o catálogo local; ela não consulta a brapi a cada digitação. Para popular ou atualizar esse catálogo, rode `php artisan assets:sync` dentro do container. A sincronização usa a API da brapi, então precisa de internet. A chave é opcional (`BRAPI_API_KEY` no `.env`); sem ela o limite é de 20 requisições por minuto.
+
+O seeder (`php artisan db:seed` ou `migrate --seed`) cria os usuários de teste e tenta executar `assets:sync`. Se a brapi falhar, o seed continua e mostra um aviso; nesse caso rode `php artisan assets:sync` depois. O seeder não cria carteiras nem movimentações: crie uma carteira pela aplicação antes de registrar uma compra ou venda.
+
+As movimentações são acessadas dentro de cada carteira: em **Minhas carteiras**, selecione **Movimentações** para ver o histórico ou registrar uma compra/venda. Cada transação salva o preço unitário vigente no momento do registro, sem alterá-lo quando a cotação atual do ativo mudar. Compras e vendas ficam limitadas aos ativos associados à carteira; para adicionar um ativo ou alterar sua meta percentual de alocação, edite a carteira.
 
 > `migrate --seed` preserva os dados existentes e aplica apenas migrations pendentes. `migrate:fresh --seed` apaga todas as tabelas antes de recriá-las; use somente se quiser apagar o banco local.
 
