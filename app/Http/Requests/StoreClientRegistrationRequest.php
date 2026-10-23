@@ -16,6 +16,9 @@ class StoreClientRegistrationRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        // O email vem da query string da URL assinada, não do corpo da requisição.
+        $this->merge(['email' => (string) $this->query('email', '')]);
+
         if ($this->has('nome')) {
             $this->merge([
                 'nome' => trim((string) $this->input('nome')),
@@ -34,6 +37,7 @@ class StoreClientRegistrationRequest extends FormRequest
                 'nullable',
                 'string',
                 'max:255',
+                'different:email',
                 Rule::unique('users', 'email'),
                 Rule::unique('users', 'recovery_email'),
             ],
@@ -50,7 +54,7 @@ class StoreClientRegistrationRequest extends FormRequest
             'nome.required' => 'O campo nome é obrigatório.',
             'nome.string' => 'O campo nome deve conter texto válido.',
             'nome.max' => 'O campo nome deve ter no máximo 255 caracteres.',
-
+            'recovery_email.different' => 'O email de recuperação deve ser diferente do email de acesso.',
             'password.required' => 'O campo senha é obrigatório.',
             'password.string' => 'A senha deve conter texto válido.',
             'password.min' => 'A senha deve ter no mínimo 8 caracteres.',

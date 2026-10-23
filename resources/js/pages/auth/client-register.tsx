@@ -70,6 +70,7 @@ export default function ClientRegister({ analystId, email, query }: Props) {
                             autoComplete="recovery_email"
                             autoFocus
                         />
+                        <InputError message={form.errors.recovery_email} />
                     </div>
 
                     <div className="grid gap-2">
