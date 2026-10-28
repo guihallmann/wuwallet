@@ -9,7 +9,7 @@ import { store } from '@/routes/password/confirm';
 export default function ConfirmPassword() {
     return (
         <>
-            <Head title="Confirm password" />
+            <Head title="Confirmar senha" />
 
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
@@ -45,7 +45,7 @@ export default function ConfirmPassword() {
 }
 
 ConfirmPassword.layout = {
-    title: 'Confirm password',
+    title: 'Confirmar senha',
     description:
-        'This is a secure area of the application. Please confirm your password before continuing.',
+        'Esta é uma área segura do aplicativo. Confirme sua senha antes de continuar.',
 };

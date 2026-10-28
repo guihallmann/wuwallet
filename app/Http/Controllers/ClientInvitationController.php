@@ -98,6 +98,6 @@ class ClientInvitationController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('dashboard')->with('status', __('Welcome aboard!'));
+        return redirect()->route('dashboard')->with('status', __('Bem-vindo à WuWallet!'));
     }
 }

@@ -1,5 +1,10 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
+import { useState } from 'react';
 import WalletController from '@/actions/App/Http/Controllers/WalletController';
+import AssetAllocationField, {
+    isAllocationComplete,
+} from '@/components/asset-allocation-field';
+import type { AllocationRow } from '@/components/asset-allocation-field';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,19 +20,50 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { index } from '@/routes/wallets';
+import { edit, index, show } from '@/routes/wallets';
+
+// Ativo já salvo na carteira (formato previsto no plano: asset_id, ticker, name, target_percentage)
+type WalletAsset = {
+    asset_id: number;
+    ticker: string;
+    name: string;
+    target_percentage: string | number;
+    current_quantity: number;
+};
 
 type Wallet = {
     id: string;
     name: string;
     objective_text: string | null;
+    // opcional por enquanto: enquanto o backend não mandar, a lista começa vazia
+    assets?: WalletAsset[];
 };
 
 type Props = {
     wallet: Wallet;
+    sectors?: string[];
 };
 
-export default function WalletsEdit({ wallet }: Props) {
+export default function WalletsEdit({ wallet, sectors = [] }: Props) {
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Carteiras', href: index() },
+            { title: wallet.name, href: show(wallet.id) },
+            { title: 'Editar', href: edit(wallet.id) },
+        ],
+    });
+
+    // Começa com os ativos que a carteira já tem (o backend manda em wallet.assets)
+    const [rows, setRows] = useState<AllocationRow[]>(() =>
+        (wallet.assets ?? []).map((asset) => ({
+            asset_id: asset.asset_id,
+            ticker: asset.ticker,
+            name: asset.name,
+            target_percentage: Number(asset.target_percentage).toFixed(2),
+            current_quantity: asset.current_quantity,
+        })),
+    );
+
     return (
         <>
             <Head title={`Editar ${wallet.name}`} />
@@ -74,8 +110,21 @@ export default function WalletsEdit({ wallet }: Props) {
                                     />
                                 </div>
 
+                                <AssetAllocationField
+                                    rows={rows}
+                                    onChange={setRows}
+                                    sectors={sectors}
+                                    errors={errors}
+                                />
+
                                 <div className="flex items-center gap-3">
-                                    <Button type="submit" disabled={processing}>
+                                    <Button
+                                        type="submit"
+                                        disabled={
+                                            processing ||
+                                            !isAllocationComplete(rows)
+                                        }
+                                    >
                                         {processing && <Spinner />}
                                         Salvar
                                     </Button>
@@ -141,11 +190,3 @@ export default function WalletsEdit({ wallet }: Props) {
     );
 }
 
-WalletsEdit.layout = {
-    breadcrumbs: [
-        {
-            title: 'Carteiras',
-            href: index(),
-        },
-    ],
-};

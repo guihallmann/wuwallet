@@ -1,17 +1,26 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Eye, Pencil, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { index as clientWalletsIndex } from '@/routes/clients/wallets';
 import { index as usersIndex } from '@/routes/users';
-import { create, edit, index } from '@/routes/wallets';
+import { create, edit, index, show } from '@/routes/wallets';
+
+const OBJECTIVE_PREVIEW_LENGTH = 120;
 
 type WalletRow = {
     id: string;
     name: string;
     objective_text: string | null;
     total_value: number;
+    assets_count: number;
 };
+
+function truncate(text: string): string {
+    return text.length > OBJECTIVE_PREVIEW_LENGTH
+        ? `${text.slice(0, OBJECTIVE_PREVIEW_LENGTH).trimEnd()}…`
+        : text;
+}
 
 type Props =
     | {
@@ -80,6 +89,9 @@ export default function WalletsIndex(props: Props) {
                                     Objetivo
                                 </th>
                                 <th className="px-4 py-3 text-right font-medium">
+                                    Ativos
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
                                     Valor
                                 </th>
                                 {mode === 'manage' && (
@@ -93,7 +105,7 @@ export default function WalletsIndex(props: Props) {
                             {wallets.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={mode === 'manage' ? 4 : 3}
+                                        colSpan={mode === 'manage' ? 5 : 4}
                                         className="text-muted-foreground px-4 py-8 text-center"
                                     >
                                         Nenhuma carteira cadastrada.
@@ -108,25 +120,57 @@ export default function WalletsIndex(props: Props) {
                                         <td className="px-4 py-3 font-medium">
                                             {wallet.name}
                                         </td>
-                                        <td className="text-muted-foreground px-4 py-3">
-                                            {wallet.objective_text ?? '—'}
+                                        <td
+                                            className="text-muted-foreground px-4 py-3"
+                                            title={
+                                                wallet.objective_text ??
+                                                undefined
+                                            }
+                                        >
+                                            {wallet.objective_text
+                                                ? truncate(wallet.objective_text)
+                                                : '—'}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            {wallet.assets_count}
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             {formatCurrency(wallet.total_value)}
                                         </td>
                                         {mode === 'manage' && (
                                             <td className="px-4 py-3 text-right">
-                                                <Button
-                                                    asChild
-                                                    variant="outline"
-                                                    size="sm"
-                                                >
-                                                    <Link
-                                                        href={edit(wallet.id)}
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="icon"
                                                     >
-                                                        Editar
-                                                    </Link>
-                                                </Button>
+                                                        <Link
+                                                            href={show(
+                                                                wallet.id,
+                                                            )}
+                                                            title="Detalhes"
+                                                            aria-label="Detalhes"
+                                                        >
+                                                            <Eye />
+                                                        </Link>
+                                                    </Button>
+                                                    <Button
+                                                        asChild
+                                                        variant="outline"
+                                                        size="icon"
+                                                    >
+                                                        <Link
+                                                            href={edit(
+                                                                wallet.id,
+                                                            )}
+                                                            title="Editar"
+                                                            aria-label="Editar"
+                                                        >
+                                                            <Pencil />
+                                                        </Link>
+                                                    </Button>
+                                                </div>
                                             </td>
                                         )}
                                     </tr>

@@ -39,7 +39,7 @@ export default function ClientRegister({ analystId, email, query }: Props) {
 
     return (
         <>
-            <Head title="Complete your registration" />
+            <Head title="Conclua seu cadastro" />
 
             <form onSubmit={submit} className="flex flex-col gap-6">
                 <div className="grid gap-6">
@@ -70,6 +70,7 @@ export default function ClientRegister({ analystId, email, query }: Props) {
                             autoComplete="recovery_email"
                             autoFocus
                         />
+                        <InputError message={form.errors.recovery_email} />
                     </div>
 
                     <div className="grid gap-2">

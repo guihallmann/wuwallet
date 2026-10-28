@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutGrid, Send, Users, Wallet } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -12,15 +12,13 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { getRoleNavigationItems } from '@/lib/role-navigation';
 import { dashboard } from '@/routes';
-import { create as createInvite } from '@/routes/analyst/invites';
-import { index as usersIndex } from '@/routes/users';
-import { index as walletsIndex } from '@/routes/wallets';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Painel',
         href: dashboard(),
         icon: LayoutGrid,
     },
@@ -28,33 +26,10 @@ const mainNavItems: NavItem[] = [
 
 export function AppSidebar() {
     const { auth } = usePage().props;
-    const role = auth.user?.role;
-
-    const navigationItems: NavItem[] = [...mainNavItems];
-
-    if (role === 'manager' || role === 'analyst') {
-        navigationItems.push({
-            title: role === 'manager' ? 'Analistas' : 'Clientes',
-            href: usersIndex(),
-            icon: Users,
-        });
-    }
-
-    if (role === 'analyst') {
-        navigationItems.push({
-            title: 'Convidar cliente',
-            href: createInvite(),
-            icon: Send,
-        });
-    }
-
-    if (role === 'client') {
-        navigationItems.push({
-            title: 'Carteiras',
-            href: walletsIndex(),
-            icon: Wallet,
-        });
-    }
+    const navigationItems: NavItem[] = [
+        ...mainNavItems,
+        ...getRoleNavigationItems(auth.user?.role),
+    ];
 
     return (
         <Sidebar collapsible="icon" variant="inset">

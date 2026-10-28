@@ -22,7 +22,7 @@ class HandleIsUserActive
             $request->session()->regenerateToken();
 
             return redirect()->route('login')
-                ->with('status', __('Your account has been disabled.'));
+                ->with('status', __('Sua conta foi desativada.'));
         }
 
         return $next($request);

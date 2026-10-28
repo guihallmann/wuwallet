@@ -24,7 +24,7 @@ type Props = {
 export default function UsersEdit({ user, managedRole }: Props) {
     return (
         <>
-            <Head title={`Edit ${user.name}`} />
+            <Head title={`Editar ${user.name}`} />
 
             <div className="flex flex-1 flex-col gap-8 p-4 md:p-8">
                 <div className="max-w-2xl">
@@ -122,7 +122,7 @@ export default function UsersEdit({ user, managedRole }: Props) {
 UsersEdit.layout = {
     breadcrumbs: [
         {
-            title: 'Users',
+            title: 'Usuários',
             href: index(),
         },
     ],

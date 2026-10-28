@@ -121,7 +121,7 @@ export default function UsersCreate({ managedRole }: Props) {
 UsersCreate.layout = {
     breadcrumbs: [
         {
-            title: 'Users',
+            title: 'Usuários',
             href: index(),
         },
     ],
