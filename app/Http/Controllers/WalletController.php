@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateWalletRequest;
 use App\Models\Asset;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\WalletAsset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class WalletController extends Controller
         return Inertia::render('wallets/index', [
             'mode' => 'manage',
             'wallets' => $this->mapWallets($wallets),
-            'totalValue' => $wallets->sum(fn (Wallet $wallet) => $wallet->totalValue()),
+            'totalValue' => $wallets->sum(fn(Wallet $wallet) => $wallet->totalValue()),
         ]);
     }
 
@@ -47,7 +48,7 @@ class WalletController extends Controller
             'mode' => 'view',
             'client' => $client->only(['id', 'name']),
             'wallets' => $this->mapWallets($wallets),
-            'totalValue' => $wallets->sum(fn (Wallet $wallet) => $wallet->totalValue()),
+            'totalValue' => $wallets->sum(fn(Wallet $wallet) => $wallet->totalValue()),
         ]);
     }
 
@@ -77,7 +78,7 @@ class WalletController extends Controller
                         ->orWhere('name', 'like', "%{$term}%");
                 });
             })
-            ->when($filters['sector'] ?? null, fn ($query, string $sector) => $query->where('sector', $sector))
+            ->when($filters['sector'] ?? null, fn($query, string $sector) => $query->where('sector', $sector))
             ->orderBy('ticker')
             ->limit(20)
             ->get();
@@ -94,7 +95,7 @@ class WalletController extends Controller
             ]);
 
             $wallet->assets()->createMany(array_map(
-                fn (array $asset): array => [
+                fn(array $asset): array => [
                     'asset_id' => $asset['asset_id'],
                     'target_percentage' => $asset['target_percentage'],
                 ],
@@ -107,6 +108,39 @@ class WalletController extends Controller
         return to_route('wallets.index');
     }
 
+    public function show(Wallet $wallet): Response
+    {
+        Gate::authorize('view', $wallet);
+
+        $wallet->load('assets.asset');
+        $totalValue = $wallet->totalValue();
+
+        return Inertia::render('wallets/show', [
+            'wallet' => [
+                ...$wallet->only(['id', 'name', 'objective_text']),
+                'total_value' => $totalValue,
+                'assets' => $wallet->assets
+                    ->sortByDesc(fn(WalletAsset $walletAsset): float => (float) $walletAsset->target_percentage)
+                    ->map(function (WalletAsset $walletAsset) use ($totalValue): array {
+                        $value = $walletAsset->current_quantity * (float) $walletAsset->asset->current_price;
+
+                        return [
+                            'ticker' => $walletAsset->asset->ticker,
+                            'name' => $walletAsset->asset->name,
+                            'sector' => $walletAsset->asset->sector,
+                            'current_price' => (float) $walletAsset->asset->current_price,
+                            'current_quantity' => $walletAsset->current_quantity,
+                            'value' => $value,
+                            'target_percentage' => (float) $walletAsset->target_percentage,
+                            'current_percentage' => $totalValue > 0 ? round($value / $totalValue * 100, 2) : 0,
+                        ];
+                    })
+                    ->values()
+                    ->all(),
+            ],
+        ]);
+    }
+
     public function edit(Wallet $wallet): Response
     {
         Gate::authorize('update', $wallet);
@@ -114,7 +148,7 @@ class WalletController extends Controller
         return Inertia::render('wallets/edit', [
             'wallet' => [
                 ...$wallet->only(['id', 'name', 'objective_text']),
-                'assets' => $wallet->assets()->with('asset')->get()->map(fn ($walletAsset): array => [
+                'assets' => $wallet->assets()->with('asset')->get()->map(fn($walletAsset): array => [
                     'asset_id' => $walletAsset->asset_id,
                     'ticker' => $walletAsset->asset->ticker,
                     'name' => $walletAsset->asset->name,
@@ -182,19 +216,20 @@ class WalletController extends Controller
 
     /**
      * @param  Collection<int, Wallet>  $wallets
-     * @return list<array{id: string, name: string, objective_text: string|null, total_value: float, allocation: list<array{ticker: string, name: string, target_percentage: string, current_quantity: int}>}>
+     * @return list<array{id: string, name: string, objective_text: string|null, total_value: float, assets_count: int, allocation: list<array{ticker: string, name: string, target_percentage: string, current_quantity: int}>}>
      */
     private function mapWallets(Collection $wallets): array
     {
         return array_values($wallets
-            ->map(fn (Wallet $wallet) => [
+            ->map(fn(Wallet $wallet) => [
                 'id' => $wallet->id,
                 'name' => $wallet->name,
                 'objective_text' => $wallet->objective_text,
                 'total_value' => $wallet->totalValue(),
+                'assets_count' => $wallet->assets->count(),
                 'allocation' => $wallet->assets
-                    ->sortByDesc(fn ($walletAsset): float => (float) $walletAsset->target_percentage)
-                    ->map(fn ($walletAsset): array => [
+                    ->sortByDesc(fn($walletAsset): float => (float) $walletAsset->target_percentage)
+                    ->map(fn($walletAsset): array => [
                         'ticker' => $walletAsset->asset->ticker,
                         'name' => $walletAsset->asset->name,
                         'target_percentage' => $walletAsset->target_percentage,
@@ -209,7 +244,10 @@ class WalletController extends Controller
     /** @return list<string> */
     private function assetSectors(): array
     {
-        return Cache::remember('asset_sectors_v2', now()->addMinutes(5), fn (): array => Asset::query()->select('sector')->distinct()->orderBy('sector')->pluck('sector')->all()
+        return Cache::remember(
+            'asset_sectors_v2',
+            now()->addMinutes(5),
+            fn(): array => Asset::query()->select('sector')->distinct()->orderBy('sector')->pluck('sector')->all()
         );
     }
 }

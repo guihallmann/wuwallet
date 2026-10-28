@@ -14,6 +14,11 @@ class WalletPolicy
         return $user->isClient();
     }
 
+    public function view(User $user, Wallet $wallet): bool
+    {
+        return $user->isClient() && $wallet->user_id === $user->getKey();
+    }
+
     public function viewTransactions(User $user, Wallet $wallet): bool
     {
         return $user->isClient() && $wallet->user_id === $user->getKey();

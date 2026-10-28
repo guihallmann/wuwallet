@@ -13,7 +13,7 @@ export default function CreateInvite() {
 
     return (
         <>
-            <Head title="Invite a client" />
+            <Head title="Convidar cliente" />
 
             <div className="flex flex-1 flex-col gap-8 p-4 md:p-8">
                 <div className="max-w-2xl">

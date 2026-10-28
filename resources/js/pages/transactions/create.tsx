@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { index as walletsIndex } from '@/routes/wallets';
+import { index as walletsIndex, show as walletsShow } from '@/routes/wallets';
 import {
     create as createWalletTransaction,
     index as walletTransactionsIndex,
@@ -39,6 +39,10 @@ export default function TransactionsCreate({ wallet, assets, today }: Props) {
                 { title: 'Carteiras', href: walletsIndex() },
                 {
                     title: wallet.name,
+                    href: walletsShow(wallet.id),
+                },
+                {
+                    title: 'Movimentações',
                     href: walletTransactionsIndex(wallet.id),
                 },
                 {

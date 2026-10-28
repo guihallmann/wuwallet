@@ -1,4 +1,4 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
 import WalletController from '@/actions/App/Http/Controllers/WalletController';
 import AssetAllocationField, {
@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { index } from '@/routes/wallets';
+import { create, index } from '@/routes/wallets';
 
 type Props = {
     // Lista de setores vinda do backend (valor padrão evita quebrar enquanto ela não existir)
@@ -19,6 +19,13 @@ type Props = {
 };
 
 export default function WalletsCreate({ sectors = [] }: Props) {
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Carteiras', href: index() },
+            { title: 'Nova carteira', href: create() },
+        ],
+    });
+
     // Ativos escolhidos até agora (só existem na tela até enviar o formulário)
     const [rows, setRows] = useState<AllocationRow[]>([]);
 
@@ -99,11 +106,3 @@ export default function WalletsCreate({ sectors = [] }: Props) {
     );
 }
 
-WalletsCreate.layout = {
-    breadcrumbs: [
-        {
-            title: 'Carteiras',
-            href: index(),
-        },
-    ],
-};

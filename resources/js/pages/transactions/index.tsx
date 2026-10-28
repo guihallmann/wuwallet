@@ -1,8 +1,8 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { Plus, Wallet } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { index as walletsIndex } from '@/routes/wallets';
+import { index as walletsIndex, show as walletsShow } from '@/routes/wallets';
 import {
     create as createWalletTransaction,
     index as walletTransactionsIndex,
@@ -32,6 +32,10 @@ export default function TransactionsIndex({ wallet, transactions }: Props) {
             { title: 'Carteiras', href: walletsIndex() },
             {
                 title: wallet.name,
+                href: walletsShow(wallet.id),
+            },
+            {
+                title: 'Movimentações',
                 href: walletTransactionsIndex(wallet.id),
             },
         ],
@@ -91,17 +95,34 @@ export default function TransactionsIndex({ wallet, transactions }: Props) {
                                 </tr>
                             ) : (
                                 transactions.map((transaction) => (
-                                    <tr key={transaction.id}>
+                                    <tr
+                                        key={transaction.id}
+                                        className={
+                                            transaction.transaction_type ===
+                                            'buy'
+                                                ? 'bg-green-50 dark:bg-green-950/30'
+                                                : 'bg-red-50 dark:bg-red-950/30'
+                                        }
+                                    >
                                         <td className="px-4 py-3">
                                             {new Date(
                                                 `${transaction.transaction_date}T00:00:00`,
                                             ).toLocaleDateString('pt-BR')}
                                         </td>
                                         <td className="px-4 py-3">
-                                            {transaction.transaction_type ===
-                                            'buy'
-                                                ? 'Compra'
-                                                : 'Venda'}
+                                            <span
+                                                className={
+                                                    transaction.transaction_type ===
+                                                    'buy'
+                                                        ? 'font-medium text-green-700 dark:text-green-400'
+                                                        : 'font-medium text-red-700 dark:text-red-400'
+                                                }
+                                            >
+                                                {transaction.transaction_type ===
+                                                'buy'
+                                                    ? 'Compra'
+                                                    : 'Venda'}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-3">
                                             <span className="font-medium">
@@ -133,13 +154,6 @@ export default function TransactionsIndex({ wallet, transactions }: Props) {
                         </tbody>
                     </table>
                 </div>
-
-                <Button asChild variant="ghost" className="w-fit">
-                    <Link href={walletsIndex()}>
-                        <Wallet />
-                        Voltar às carteiras
-                    </Link>
-                </Button>
             </div>
         </>
     );

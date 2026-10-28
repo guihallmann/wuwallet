@@ -10,9 +10,9 @@ Route::middleware('auth')->group(function () {
     Route::get('assets/search', [WalletController::class, 'searchAssets'])
         ->name('assets.search');
 
-    Route::get('transactions', fn () => to_route('wallets.index'))
+    Route::get('transactions', fn() => to_route('wallets.index'))
         ->name('transactions.index');
-    Route::get('transactions/create', fn () => to_route('wallets.index'))
+    Route::get('transactions/create', fn() => to_route('wallets.index'))
         ->name('transactions.create');
 
     Route::get('wallets/{wallet}/transactions', [TransactionController::class, 'index'])
@@ -23,7 +23,7 @@ Route::middleware('auth')->group(function () {
         ->name('wallets.transactions.store');
 
     Route::resource('wallets', WalletController::class)
-        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
     Route::get('clients/{client}/wallets', [WalletController::class, 'clientWallets'])
         ->name('clients.wallets.index');

@@ -55,8 +55,8 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </Form>
 
                 <div className="text-muted-foreground space-x-1 text-center text-sm">
-                    <span>Or, voltar para</span>
-                    <TextLink href={login()}>log in</TextLink>
+                    <span>Ou, voltar para</span>
+                    <TextLink href={login()}>entrar</TextLink>
                 </div>
             </div>
         </>
@@ -64,6 +64,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
 }
 
 ForgotPassword.layout = {
-    title: 'Forgot password',
-    description: 'Enter your email to receive a password reset link',
+    title: 'Esqueceu sua senha?',
+    description:
+        'Informe seu email para receber um link de recuperação de senha',
 };

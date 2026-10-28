@@ -37,7 +37,7 @@ type Props = {
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Painel',
         href: dashboard(),
         icon: LayoutGrid,
     },
@@ -84,7 +84,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                 className="bg-sidebar flex h-full w-64 flex-col items-stretch justify-between"
                             >
                                 <SheetTitle className="sr-only">
-                                    Navigation menu
+                                    Menu de navegação
                                 </SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
                                     <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />

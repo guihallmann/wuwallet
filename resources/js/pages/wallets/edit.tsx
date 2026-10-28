@@ -1,4 +1,4 @@
-import { Form, Head, Link } from '@inertiajs/react';
+import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
 import WalletController from '@/actions/App/Http/Controllers/WalletController';
 import AssetAllocationField, {
@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
-import { index } from '@/routes/wallets';
+import { edit, index, show } from '@/routes/wallets';
 
 // Ativo já salvo na carteira (formato previsto no plano: asset_id, ticker, name, target_percentage)
 type WalletAsset = {
@@ -45,6 +45,14 @@ type Props = {
 };
 
 export default function WalletsEdit({ wallet, sectors = [] }: Props) {
+    setLayoutProps({
+        breadcrumbs: [
+            { title: 'Carteiras', href: index() },
+            { title: wallet.name, href: show(wallet.id) },
+            { title: 'Editar', href: edit(wallet.id) },
+        ],
+    });
+
     // Começa com os ativos que a carteira já tem (o backend manda em wallet.assets)
     const [rows, setRows] = useState<AllocationRow[]>(() =>
         (wallet.assets ?? []).map((asset) => ({
@@ -182,11 +190,3 @@ export default function WalletsEdit({ wallet, sectors = [] }: Props) {
     );
 }
 
-WalletsEdit.layout = {
-    breadcrumbs: [
-        {
-            title: 'Carteiras',
-            href: index(),
-        },
-    ],
-};

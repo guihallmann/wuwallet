@@ -53,7 +53,7 @@ class WalletManagementTest extends TestCase
         $response = $this->actingAs($client)->get(route('wallets.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn($page) => $page
             ->component('wallets/index')
             ->where('mode', 'manage')
             ->has('wallets', 1)
@@ -83,10 +83,43 @@ class WalletManagementTest extends TestCase
 
         $response = $this->actingAs($client)->get(route('wallets.index'));
 
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn($page) => $page
             ->where('wallets.0.total_value', 300)
             ->where('wallets.0.allocation.0.current_quantity', 10)
             ->where('totalValue', 300));
+    }
+
+    public function test_client_can_view_own_wallet_details_but_not_others(): void
+    {
+        $analyst = $this->analystFor($this->manager());
+        $client = $this->clientFor($analyst);
+        $wallet = Wallet::factory()->for($client)->create();
+
+        $asset = Asset::query()->create([
+            'ticker' => 'PETR4',
+            'name' => 'Petrobras',
+            'sector' => 'Petróleo',
+            'current_price' => 30,
+        ]);
+
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+            'current_quantity' => 10,
+        ]);
+
+        $this->actingAs($client)->get(route('wallets.show', $wallet))
+            ->assertOk()
+            ->assertInertia(fn($page) => $page
+                ->component('wallets/show')
+                ->where('wallet.total_value', 300)
+                ->where('wallet.assets.0.ticker', 'PETR4')
+                ->where('wallet.assets.0.current_percentage', 100));
+
+        $this->actingAs($this->clientFor($analyst))
+            ->get(route('wallets.show', $wallet))
+            ->assertForbidden();
     }
 
     public function test_client_cannot_remove_an_asset_with_a_positive_balance_from_a_wallet(): void
@@ -212,7 +245,7 @@ class WalletManagementTest extends TestCase
         $response = $this->actingAs($analyst)->get(route('clients.wallets.index', $client));
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn($page) => $page
             ->component('wallets/index')
             ->where('mode', 'view')
             ->where('client.id', $client->getKey())

@@ -9,7 +9,7 @@ export default function Dashboard() {
 
     return (
         <>
-            <Head title="Dashboard" />
+            <Head title="Painel" />
             <div className="flex flex-1 flex-col gap-8 p-4 md:p-8">
                 <div className="space-y-2">
                     <h1 className="text-2xl font-semibold tracking-tight">
@@ -76,7 +76,7 @@ export default function Dashboard() {
 Dashboard.layout = {
     breadcrumbs: [
         {
-            title: 'Dashboard',
+            title: 'Painel',
             href: dashboard(),
         },
     ],

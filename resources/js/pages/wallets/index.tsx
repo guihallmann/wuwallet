@@ -1,24 +1,26 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
-import { Plus, Repeat2 } from 'lucide-react';
+import { Eye, Pencil, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
 import { index as clientWalletsIndex } from '@/routes/clients/wallets';
 import { index as usersIndex } from '@/routes/users';
-import { create, edit, index } from '@/routes/wallets';
-import { index as walletTransactionsIndex } from '@/routes/wallets/transactions';
+import { create, edit, index, show } from '@/routes/wallets';
+
+const OBJECTIVE_PREVIEW_LENGTH = 120;
 
 type WalletRow = {
     id: string;
     name: string;
     objective_text: string | null;
     total_value: number;
-    allocation: {
-        ticker: string;
-        name: string;
-        target_percentage: string;
-        current_quantity: number;
-    }[];
+    assets_count: number;
 };
+
+function truncate(text: string): string {
+    return text.length > OBJECTIVE_PREVIEW_LENGTH
+        ? `${text.slice(0, OBJECTIVE_PREVIEW_LENGTH).trimEnd()}…`
+        : text;
+}
 
 type Props =
     | {
@@ -86,11 +88,8 @@ export default function WalletsIndex(props: Props) {
                                 <th className="px-4 py-3 font-medium">
                                     Objetivo
                                 </th>
-                                <th className="px-4 py-3 font-medium">
-                                    Alocação
-                                </th>
                                 <th className="px-4 py-3 text-right font-medium">
-                                    Quantidade
+                                    Ativos
                                 </th>
                                 <th className="px-4 py-3 text-right font-medium">
                                     Valor
@@ -106,7 +105,7 @@ export default function WalletsIndex(props: Props) {
                             {wallets.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan={mode === 'manage' ? 6 : 5}
+                                        colSpan={mode === 'manage' ? 5 : 4}
                                         className="text-muted-foreground px-4 py-8 text-center"
                                     >
                                         Nenhuma carteira cadastrada.
@@ -121,78 +120,54 @@ export default function WalletsIndex(props: Props) {
                                         <td className="px-4 py-3 font-medium">
                                             {wallet.name}
                                         </td>
-                                        <td className="text-muted-foreground px-4 py-3">
-                                            {wallet.objective_text ?? '—'}
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {wallet.allocation.map(
-                                                    (asset) => (
-                                                        <span
-                                                            key={asset.ticker}
-                                                            title={asset.name}
-                                                            className="bg-muted rounded-md px-2 py-1 text-xs"
-                                                        >
-                                                            {asset.ticker}{' '}
-                                                            {Number(
-                                                                asset.target_percentage,
-                                                            ).toFixed(2)}
-                                                            %
-                                                        </span>
-                                                    ),
-                                                )}
-                                            </div>
+                                        <td
+                                            className="text-muted-foreground px-4 py-3"
+                                            title={
+                                                wallet.objective_text ??
+                                                undefined
+                                            }
+                                        >
+                                            {wallet.objective_text
+                                                ? truncate(wallet.objective_text)
+                                                : '—'}
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <div className="flex flex-wrap justify-end gap-1.5">
-                                                {wallet.allocation.map(
-                                                    (asset) => (
-                                                        <span
-                                                            key={asset.ticker}
-                                                            title={asset.name}
-                                                            className="bg-muted rounded-md px-2 py-1 text-xs"
-                                                        >
-
-                                                            {asset.current_quantity.toLocaleString(
-                                                                'pt-BR',
-                                                            )}{' '}
-                                                            ações
-                                                        </span>
-                                                    ),
-                                                )}
-                                            </div>
+                                            {wallet.assets_count}
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             {formatCurrency(wallet.total_value)}
                                         </td>
                                         {mode === 'manage' && (
                                             <td className="px-4 py-3 text-right">
-                                                <div className="flex flex-col items-stretch gap-2">
+                                                <div className="flex justify-end gap-2">
                                                     <Button
                                                         asChild
                                                         variant="outline"
-                                                        size="sm"
+                                                        size="icon"
                                                     >
                                                         <Link
-                                                            href={edit(
+                                                            href={show(
                                                                 wallet.id,
                                                             )}
+                                                            title="Detalhes"
+                                                            aria-label="Detalhes"
                                                         >
-                                                            Editar
+                                                            <Eye />
                                                         </Link>
                                                     </Button>
                                                     <Button
                                                         asChild
                                                         variant="outline"
-                                                        size="sm"
+                                                        size="icon"
                                                     >
                                                         <Link
-                                                            href={walletTransactionsIndex(
+                                                            href={edit(
                                                                 wallet.id,
                                                             )}
+                                                            title="Editar"
+                                                            aria-label="Editar"
                                                         >
-                                                            <Repeat2 />
-                                                            Movimentações
+                                                            <Pencil />
                                                         </Link>
                                                     </Button>
                                                 </div>
