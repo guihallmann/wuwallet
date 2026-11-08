@@ -1,5 +1,6 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Pencil, Repeat2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { edit, index, show } from '@/routes/wallets';
@@ -27,6 +28,22 @@ type Props = {
 };
 
 export default function WalletsShow({ wallet }: Props) {
+    const [sectorFilter, setSectorFilter] = useState('');
+    const sectors = useMemo(
+        () =>
+            Array.from(
+                new Set(
+                    wallet.assets
+                        .map((asset) => asset.sector)
+                        .filter((sector): sector is string => Boolean(sector)),
+                ),
+            ).sort((left, right) => left.localeCompare(right, 'pt-BR')),
+        [wallet.assets],
+    );
+    const visibleAssets = sectorFilter
+        ? wallet.assets.filter((asset) => asset.sector === sectorFilter)
+        : wallet.assets;
+
     setLayoutProps({
         breadcrumbs: [
             { title: 'Carteiras', href: index() },
@@ -74,6 +91,26 @@ export default function WalletsShow({ wallet }: Props) {
                 </div>
 
                 <div className="border-border overflow-hidden rounded-xl border">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
+                        <h2 className="font-medium">Ativos da carteira</h2>
+                        <label className="flex items-center gap-2 text-sm">
+                            <span className="text-muted-foreground">Setor</span>
+                            <select
+                                value={sectorFilter}
+                                onChange={(event) =>
+                                    setSectorFilter(event.target.value)
+                                }
+                                className="border-input bg-background h-9 rounded-md border px-3"
+                            >
+                                <option value="">Todos os setores</option>
+                                {sectors.map((sector) => (
+                                    <option key={sector} value={sector}>
+                                        {sector}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    </div>
                     <table className="w-full text-sm">
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr className="text-left">
@@ -106,8 +143,17 @@ export default function WalletsShow({ wallet }: Props) {
                                         Nenhum ativo nesta carteira.
                                     </td>
                                 </tr>
+                            ) : visibleAssets.length === 0 ? (
+                                <tr>
+                                    <td
+                                        colSpan={7}
+                                        className="text-muted-foreground px-4 py-8 text-center"
+                                    >
+                                        Nenhum ativo neste setor.
+                                    </td>
+                                </tr>
                             ) : (
-                                wallet.assets.map((asset) => (
+                                visibleAssets.map((asset) => (
                                     <tr
                                         key={asset.ticker}
                                         className="hover:bg-muted/30"
