@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Asset;
 use App\Services\Brapi\BrapiClient;
 use App\Services\Brapi\BrapiException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AssetSyncService
@@ -37,9 +38,19 @@ class AssetSyncService
             }
         }
 
-        foreach (array_chunk(array_values($rows), self::UPSERT_CHUNK_SIZE) as $chunk) {
-            Asset::query()->upsert($chunk, ['ticker'], ['name', 'sector', 'current_price', 'price_updated_at']);
-        }
+        DB::transaction(function () use ($rows): void {
+            Asset::query()
+                ->whereNotIn('ticker', array_keys($rows))
+                ->update(['is_active' => false]);
+
+            foreach (array_chunk(array_values($rows), self::UPSERT_CHUNK_SIZE) as $chunk) {
+                Asset::query()->upsert(
+                    $chunk,
+                    ['ticker'],
+                    ['name', 'sector', 'current_price', 'is_active', 'price_updated_at'],
+                );
+            }
+        });
 
         $summary = [
             'fetched' => count($items),
@@ -54,7 +65,7 @@ class AssetSyncService
 
     /**
      * @param  array<string, mixed>  $item
-     * @return array{ticker: string, name: string, sector: string, current_price: string}|null
+     * @return array{ticker: string, name: string, sector: string, current_price: string, is_active: true}|null
      */
     private function toRow(array $item): ?array
     {
@@ -72,11 +83,16 @@ class AssetSyncService
 
         $ticker = strtoupper($ticker);
 
+        if (str_ends_with($ticker, 'F')) {
+            return null;
+        }
+
         return [
             'ticker' => $ticker,
             'name' => $this->string($item['name'] ?? null) ?? $this->string($item['longName'] ?? null) ?? $ticker,
             'sector' => $sector,
             'current_price' => number_format((float) $price, 2, '.', ''),
+            'is_active' => true,
         ];
     }
 

@@ -79,16 +79,17 @@ class AssetSyncTest extends TestCase
         $this->assertSame('Energy Minerals', Asset::query()->where('ticker', 'VALE3')->value('sector'));
     }
 
-    public function test_it_skips_inactive_unpriced_and_unclassified_tickers(): void
+    public function test_it_skips_inactive_unpriced_unclassified_and_fractional_tickers(): void
     {
         $this->fakeTickers([
             $this->ticker('OK3'),
             $this->ticker('OFF3', ['isActive' => false]),
             $this->ticker('NULL3', ['quote' => ['lastPrice' => null]]),
             $this->ticker('NOSEC3', ['sector' => null, 'subsector' => null]),
+            $this->ticker('FRAC3F'),
         ]);
 
-        $this->artisan('assets:sync')->expectsOutput('Fetched 4, upserted 1, skipped 3.')->assertSuccessful();
+        $this->artisan('assets:sync')->expectsOutput('Fetched 5, upserted 1, skipped 4.')->assertSuccessful();
 
         $this->assertSame(['OK3'], Asset::query()->pluck('ticker')->all());
     }
@@ -131,6 +132,7 @@ class AssetSyncTest extends TestCase
         $this->artisan('assets:sync')->assertSuccessful();
 
         $this->assertSame('5.00', Asset::query()->where('ticker', 'GONE3')->value('current_price'));
+        $this->assertFalse(Asset::query()->where('ticker', 'GONE3')->value('is_active'));
     }
 
     public function test_command_fails_gracefully_when_the_api_is_down(): void

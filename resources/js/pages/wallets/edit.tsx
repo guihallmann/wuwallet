@@ -45,7 +45,9 @@ type Props = {
 };
 
 export default function WalletsEdit({ wallet, sectors = [] }: Props) {
-    const hasAssets = (wallet.assets?.length ?? 0) > 0;
+    const hasHoldings = (wallet.assets ?? []).some(
+        (asset) => asset.current_quantity > 0,
+    );
     setLayoutProps({
         breadcrumbs: [
             { title: 'Carteiras', href: index() },
@@ -145,7 +147,10 @@ export default function WalletsEdit({ wallet, sectors = [] }: Props) {
                 <div className="max-w-2xl">
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button variant="destructive" disabled={hasAssets}>
+                            <Button
+                                variant="destructive"
+                                disabled={hasHoldings}
+                            >
                                 Excluir carteira
                             </Button>
                         </DialogTrigger>
@@ -155,9 +160,9 @@ export default function WalletsEdit({ wallet, sectors = [] }: Props) {
                             </DialogTitle>
                             <DialogDescription>
                                 Esta ação não pode ser desfeita.
-                                {hasAssets
-                                    ? ' Para excluir, remova ou transfira todos os ativos da carteira primeiro.'
-                                    : ' A carteira não possui ativos associados.'}
+                                {hasHoldings
+                                    ? ' Venda todos os ativos em custódia antes de excluir.'
+                                    : ' A carteira e todo o histórico de movimentações serão excluídos permanentemente.'}
                             </DialogDescription>
 
                             <DialogFooter className="gap-2">
@@ -176,7 +181,9 @@ export default function WalletsEdit({ wallet, sectors = [] }: Props) {
                                         <Button
                                             type="submit"
                                             variant="destructive"
-                                            disabled={processing || hasAssets}
+                                            disabled={
+                                                processing || hasHoldings
+                                            }
                                         >
                                             {processing && <Spinner />}
                                             Excluir carteira
@@ -186,11 +193,11 @@ export default function WalletsEdit({ wallet, sectors = [] }: Props) {
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
-                    {hasAssets && (
+                    {hasHoldings && (
                         <p className="text-destructive mt-3 text-sm" role="alert">
-                            Não é possível excluir esta carteira enquanto ela
-                            tiver ativos associados. Remova ou transfira os
-                            ativos primeiro.
+                            Não é possível excluir esta carteira enquanto
+                            houver ativos em custódia. Venda-os antes de
+                            excluir.
                         </p>
                     )}
                 </div>
