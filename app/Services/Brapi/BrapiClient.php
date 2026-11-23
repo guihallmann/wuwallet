@@ -87,7 +87,7 @@ class BrapiClient
                 if ($attempt === $maxAttempts) {
                     $this->logFailure($path, $attempt, null, null, $e->getMessage());
 
-                    throw new BrapiException('brapi connection failed: ' . $e->getMessage(), previous: $e);
+                    throw new BrapiException('brapi connection failed: '.$e->getMessage(), previous: $e);
                 }
 
                 $this->logRetry($path, $attempt, null, null);
@@ -110,7 +110,7 @@ class BrapiClient
                 $this->logFailure($path, $attempt, $status, $code, $this->errorMessage($response));
 
                 throw new BrapiException(
-                    "brapi request failed with status {$status}" . ($code !== null ? " ({$code})" : ''),
+                    "brapi request failed with status {$status}".($code !== null ? " ({$code})" : ''),
                     $status,
                     $code,
                 );

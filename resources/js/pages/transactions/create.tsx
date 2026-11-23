@@ -63,9 +63,7 @@ export default function TransactionsCreate({ wallet, assets, today }: Props) {
                   wallet.sellableAssetIds.includes(asset.id),
               )
             : assets;
-    const selectedAsset = assets.find(
-        (asset) => asset.id === Number(assetId),
-    );
+    const selectedAsset = assets.find((asset) => asset.id === Number(assetId));
     const sellableQuantity = selectedAsset
         ? Math.floor(selectedAsset.current_quantity / 100) * 100
         : 0;
@@ -176,7 +174,9 @@ export default function TransactionsCreate({ wallet, assets, today }: Props) {
                                                 selectedAsset && (
                                                     <span className="text-muted-foreground text-sm">
                                                         Saldo em custódia:{' '}
-                                                        {selectedAsset.current_quantity}
+                                                        {
+                                                            selectedAsset.current_quantity
+                                                        }
                                                     </span>
                                                 )}
                                         </div>
@@ -220,8 +220,7 @@ export default function TransactionsCreate({ wallet, assets, today }: Props) {
                                         {type === 'sell' && selectedAsset && (
                                             <p className="text-muted-foreground text-sm">
                                                 Disponível para venda em lotes
-                                                de 100:{' '}
-                                                {sellableQuantity}
+                                                de 100: {sellableQuantity}
                                             </p>
                                         )}
                                         {selectedAsset &&

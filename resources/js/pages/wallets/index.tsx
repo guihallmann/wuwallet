@@ -128,7 +128,9 @@ export default function WalletsIndex(props: Props) {
                                             }
                                         >
                                             {wallet.objective_text
-                                                ? truncate(wallet.objective_text)
+                                                ? truncate(
+                                                      wallet.objective_text,
+                                                  )
                                                 : '—'}
                                         </td>
                                         <td className="px-4 py-3 text-right">

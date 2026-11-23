@@ -9,6 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Asset extends Model
 {
+    // B3 lists odd-lot (mercado fracionário) tickers as the base ticker plus this suffix; brapi has no flag for it.
+    public const FRACTIONAL_SUFFIX = 'F';
+
+    public const LOT_SIZE = 100;
+
+    public const SECTORS_CACHE_KEY = 'asset_sectors_v3';
+
     /**
      * @var list<string>
      */
@@ -39,6 +46,11 @@ class Asset extends Model
         return $query
             ->where('is_active', true)
             ->where('current_price', '>', 0)
-            ->where('ticker', 'not like', '%F');
+            ->where('ticker', 'not like', '%'.self::FRACTIONAL_SUFFIX);
+    }
+
+    public static function isFractionalTicker(string $ticker): bool
+    {
+        return str_ends_with(strtoupper($ticker), self::FRACTIONAL_SUFFIX);
     }
 }

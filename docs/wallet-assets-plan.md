@@ -26,24 +26,24 @@ Wallet create and edit must require an asset allocation: one or more assets, eac
 
 1. No migration.
 2. Add `AssetController@index`, a JSON search.
-   - Filters by `q` on ticker or name, max 20 rows, ordered by ticker.
-   - Optional `sector` param: exact match on `assets.sector`, combinable with `q`. With a sector and an empty `q`, it returns the first 20 assets of that sector.
-   - Validate inputs: `q` nullable string max 50, `sector` nullable string max 100.
-   - Returns `id`, `ticker`, `name`, `sector`, `current_price`.
-   - Route in [routes/wallets.php](../routes/wallets.php) under `auth`, name `assets.search`, client-only.
+    - Filters by `q` on ticker or name, max 20 rows, ordered by ticker.
+    - Optional `sector` param: exact match on `assets.sector`, combinable with `q`. With a sector and an empty `q`, it returns the first 20 assets of that sector.
+    - Validate inputs: `q` nullable string max 50, `sector` nullable string max 100.
+    - Returns `id`, `ticker`, `name`, `sector`, `current_price`.
+    - Route in [routes/wallets.php](../routes/wallets.php) under `auth`, name `assets.search`, client-only.
 3. Add `app/Concerns/WalletAssetValidationRules.php`.
-   - `assets`: required, array, min 1, max 50.
-   - `assets.*.asset_id`: required, `distinct`, `exists:assets,id`.
-   - `assets.*.target_percentage`: required, numeric, `gt:0`, `lte:100`, `decimal:0,2`.
-   - After-validation hook: convert each percentage to integer hundredths; the sum must equal 10000, otherwise add an error on `assets`.
+    - `assets`: required, array, min 1, max 50.
+    - `assets.*.asset_id`: required, `distinct`, `exists:assets,id`.
+    - `assets.*.target_percentage`: required, numeric, `gt:0`, `lte:100`, `decimal:0,2`.
+    - After-validation hook: convert each percentage to integer hundredths; the sum must equal 10000, otherwise add an error on `assets`.
 4. Use the concern in `StoreWalletRequest` and `UpdateWalletRequest`.
 5. `WalletController::store`: `DB::transaction` that creates the wallet, then its `WalletAsset` rows.
 6. `WalletController::update`: `DB::transaction`.
-   - Update wallet fields.
-   - Update existing assets, create new ones, delete removed ones. Preserve `current_quantity` for kept assets.
-   - Reject removing an asset with `current_quantity` > 0 with a validation error.
+    - Update wallet fields.
+    - Update existing assets, create new ones, delete removed ones. Preserve `current_quantity` for kept assets.
+    - Reject removing an asset with `current_quantity` > 0 with a validation error.
 7. `WalletController::edit`: pass `wallet.assets` as `{asset_id, ticker, name, target_percentage}` rows (eager load `assets.asset`).
-   - `create` and `edit` also pass `sectors`: sorted distinct `assets.sector` values. Use `Inertia::once()` or a short cache, since it only changes on asset sync.
+    - `create` and `edit` also pass `sectors`: sorted distinct `assets.sector` values. Use `Inertia::once()` or a short cache, since it only changes on asset sync.
 8. `mapWallets`: add `allocation` (`ticker`, `name`, `target_percentage`, highest first).
 9. Optional: `AssetFactory` and `WalletAssetFactory`.
 

@@ -258,10 +258,18 @@ class WalletManagementTest extends TestCase
         $manager = $this->manager();
         $analyst = $this->analystFor($manager);
         $client = $this->clientFor($analyst);
+        $asset = Asset::query()->create([
+            'ticker' => 'PETR4',
+            'name' => 'Petrobras',
+            'sector' => 'Petróleo',
+            'current_price' => 30,
+        ]);
+        $assets = [['asset_id' => $asset->getKey(), 'target_percentage' => 100]];
 
         $this->actingAs($client)->post(route('wallets.store'), [
             'name' => 'Aposentadoria',
             'objective_text' => 'Longo prazo',
+            'assets' => $assets,
         ])->assertRedirect(route('wallets.index'));
 
         $wallet = Wallet::query()->where('user_id', $client->getKey())->firstOrFail();
@@ -269,6 +277,7 @@ class WalletManagementTest extends TestCase
         $this->actingAs($client)->put(route('wallets.update', $wallet), [
             'name' => 'Aposentadoria 2',
             'objective_text' => 'Atualizado',
+            'assets' => $assets,
         ])->assertRedirect(route('wallets.index'));
 
         $this->assertDatabaseHas('wallets', [

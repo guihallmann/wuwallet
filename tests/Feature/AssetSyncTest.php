@@ -10,6 +10,8 @@ use App\Models\WalletAsset;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
 use Tests\TestCase;
@@ -68,6 +70,44 @@ class AssetSyncTest extends TestCase
         $this->assertSame('Petróleo, Gás e Biocombustíveis', $asset->sector);
         $this->assertSame('36.65', $asset->current_price);
         $this->assertNotNull($asset->price_updated_at);
+    }
+
+    public function test_it_requests_stocks_sorted_by_symbol_for_stable_pagination(): void
+    {
+        $this->fakeTickers([$this->ticker('PETR4')]);
+
+        $this->artisan('assets:sync')->assertSuccessful();
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/api/v2/tickers')
+            && $request['type'] === 'stock'
+            && $request['sortBy'] === 'symbol'
+            && $request['sortOrder'] === 'asc');
+    }
+
+    public function test_it_aborts_without_deactivating_the_catalog_when_no_ticker_is_tradable(): void
+    {
+        Asset::query()->create([
+            'ticker' => 'PETR4',
+            'name' => 'Petrobras',
+            'sector' => 'Energy Minerals',
+            'current_price' => 30,
+        ]);
+        $this->fakeTickers([$this->ticker('PETR4F')]);
+
+        $this->artisan('assets:sync')->assertFailed();
+
+        $this->assertTrue(Asset::query()->where('ticker', 'PETR4')->value('is_active'));
+        $this->assertFalse(Asset::query()->where('ticker', 'PETR4F')->exists());
+    }
+
+    public function test_it_clears_the_cached_sector_list(): void
+    {
+        Cache::put(Asset::SECTORS_CACHE_KEY, ['Stale'], now()->addMinutes(5));
+        $this->fakeTickers([$this->ticker('PETR4')]);
+
+        $this->artisan('assets:sync')->assertSuccessful();
+
+        $this->assertFalse(Cache::has(Asset::SECTORS_CACHE_KEY));
     }
 
     public function test_it_falls_back_to_sector_when_subsector_is_null(): void

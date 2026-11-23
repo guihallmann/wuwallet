@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TransactionType;
 use App\Http\Requests\StoreTransactionRequest;
+use App\Models\Asset;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\WalletAsset;
@@ -69,7 +70,7 @@ class TransactionController extends Controller
                 'id' => $wallet->id,
                 'name' => $wallet->name,
                 'sellableAssetIds' => $walletAssets
-                    ->filter(fn (WalletAsset $walletAsset): bool => $walletAsset->current_quantity >= 100)
+                    ->filter(fn (WalletAsset $walletAsset): bool => $walletAsset->current_quantity >= Asset::LOT_SIZE)
                     ->pluck('asset_id')
                     ->map(fn ($id): int => (int) $id)
                     ->all(),
