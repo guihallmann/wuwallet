@@ -25,7 +25,8 @@ class AssetSyncService
      */
     public function sync(): array
     {
-        $items = $this->client->tickers(['type' => 'stock']);
+        // Stable ordering keeps pagination consistent while prices and volumes change mid-sync.
+        $items = $this->client->tickers(['type' => 'stock', 'sortBy' => 'symbol', 'sortOrder' => 'asc']);
 
         $now = now();
         $rows = [];
@@ -36,6 +37,10 @@ class AssetSyncService
             if ($row !== null) {
                 $rows[$row['ticker']] = $row + ['price_updated_at' => $now];
             }
+        }
+
+        if ($rows === []) {
+            throw new BrapiException('brapi returned no tradable tickers; sync aborted to keep the current catalog.');
         }
 
         DB::transaction(function () use ($rows): void {
@@ -83,7 +88,7 @@ class AssetSyncService
 
         $ticker = strtoupper($ticker);
 
-        if (str_ends_with($ticker, 'F')) {
+        if (Asset::isFractionalTicker($ticker)) {
             return null;
         }
 

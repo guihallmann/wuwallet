@@ -265,9 +265,9 @@ class WalletController extends Controller
     private function assetSectors(): array
     {
         return Cache::remember(
-            'asset_sectors_v3',
+            Asset::SECTORS_CACHE_KEY,
             now()->addMinutes(5),
-            fn (): array => Asset::query()->tradable()->select('sector')->distinct()->orderBy('sector')->pluck('sector')->all()
+            fn(): array => Asset::query()->tradable()->select('sector')->distinct()->orderBy('sector')->pluck('sector')->all()
         );
     }
 }

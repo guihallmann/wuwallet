@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Models\Asset;
 use App\Services\AssetSyncService;
 use App\Services\Brapi\BrapiException;
 use Illuminate\Console\Command;
@@ -20,12 +21,12 @@ class SyncAssetsCommand extends Command
         try {
             $summary = $service->sync();
         } catch (BrapiException $e) {
-            $this->error('Asset sync failed: '.$e->getMessage());
+            $this->error('Asset sync failed: ' . $e->getMessage());
 
             return self::FAILURE;
         }
 
-        Cache::forget('asset_sectors_v2');
+        Cache::forget(Asset::SECTORS_CACHE_KEY);
 
         $this->info(sprintf(
             'Fetched %d, upserted %d, skipped %d.',

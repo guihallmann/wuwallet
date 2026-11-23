@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TransactionType;
 use App\Http\Requests\StoreTransactionRequest;
+use App\Models\Asset;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\WalletAsset;
@@ -27,7 +28,7 @@ class TransactionController extends Controller
             ->orderByDesc('transaction_date')
             ->orderByDesc('created_at')
             ->get()
-            ->map(fn (Transaction $transaction): array => [
+            ->map(fn(Transaction $transaction): array => [
                 'id' => $transaction->getKey(),
                 'ticker' => $transaction->asset->ticker,
                 'asset_name' => $transaction->asset->name,
@@ -50,11 +51,11 @@ class TransactionController extends Controller
 
         $walletAssets = WalletAsset::query()
             ->where('wallet_id', $wallet->getKey())
-            ->whereHas('asset', fn (Builder $query) => $query->tradable())
+            ->whereHas('asset', fn(Builder $query) => $query->tradable())
             ->with('asset:id,ticker,name,current_price')
             ->get();
         $assets = $walletAssets
-            ->map(fn (WalletAsset $walletAsset): array => [
+            ->map(fn(WalletAsset $walletAsset): array => [
                 'id' => $walletAsset->asset->id,
                 'ticker' => $walletAsset->asset->ticker,
                 'name' => $walletAsset->asset->name,
@@ -69,9 +70,9 @@ class TransactionController extends Controller
                 'id' => $wallet->id,
                 'name' => $wallet->name,
                 'sellableAssetIds' => $walletAssets
-                    ->filter(fn (WalletAsset $walletAsset): bool => $walletAsset->current_quantity >= 100)
+                    ->filter(fn(WalletAsset $walletAsset): bool => $walletAsset->current_quantity >= Asset::LOT_SIZE)
                     ->pluck('asset_id')
-                    ->map(fn ($id): int => (int) $id)
+                    ->map(fn($id): int => (int) $id)
                     ->all(),
             ],
             'assets' => $assets,
