@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\TransactionType;
+use App\Models\Asset;
 use App\Models\Wallet;
 use App\Models\WalletAsset;
 use Closure;
@@ -30,7 +31,7 @@ class StoreTransactionRequest extends FormRequest
         return [
             'asset_id' => ['required', 'integer', 'exists:assets,id'],
             'transaction_type' => ['required', Rule::enum(TransactionType::class)],
-            'quantity' => ['required', 'integer', 'min:1', 'max:4294967295'],
+            'quantity' => ['required', 'integer', 'min:100', 'multiple_of:100', 'max:4294967295'],
             'transaction_date' => ['required', 'date_format:Y-m-d', 'date_equals:today'],
         ];
     }
@@ -46,8 +47,14 @@ class StoreTransactionRequest extends FormRequest
                     return;
                 }
 
+                $wallet = $this->route('wallet');
+
+                if (! $wallet instanceof Wallet) {
+                    return;
+                }
+
                 $hasPosition = WalletAsset::query()
-                    ->where('wallet_id', $this->route('wallet')->getKey())
+                    ->where('wallet_id', $wallet->getKey())
                     ->where('asset_id', $this->integer('asset_id'))
                     ->exists();
 
@@ -55,6 +62,20 @@ class StoreTransactionRequest extends FormRequest
                     $validator->errors()->add(
                         'asset_id',
                         __('Este ativo não está cadastrado nesta carteira.'),
+                    );
+
+                    return;
+                }
+
+                $isTradable = Asset::query()
+                    ->tradable()
+                    ->whereKey($this->integer('asset_id'))
+                    ->exists();
+
+                if (! $isTradable) {
+                    $validator->errors()->add(
+                        'asset_id',
+                        __('Este ativo está inativo ou não está disponível para movimentações.'),
                     );
                 }
             },

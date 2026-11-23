@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletAsset;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class TransactionManagementTest extends TestCase
@@ -72,8 +73,53 @@ class TransactionManagementTest extends TestCase
             ->where('wallet.id', $wallet->getKey())
             ->where('assets.0.id', $asset->getKey())
             ->where('assets.0.name', 'Empresa de teste')
+            ->where('assets.0.current_price', 42.5)
+            ->where('assets.0.current_quantity', 0)
             ->has('assets', 1)
             ->has('today'));
+    }
+
+    public function test_search_and_transaction_form_exclude_inactive_and_fractional_assets(): void
+    {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $tradableAsset = $this->asset();
+        $inactiveAsset = Asset::query()->create([
+            'ticker' => 'OFF3',
+            'name' => 'Ativo inativo',
+            'sector' => 'Tecnologia',
+            'current_price' => '10.00',
+            'is_active' => false,
+        ]);
+        $fractionalAsset = Asset::query()->create([
+            'ticker' => 'FRAC3F',
+            'name' => 'Ativo fracionário',
+            'sector' => 'Tecnologia',
+            'current_price' => '10.00',
+        ]);
+
+        foreach ([$tradableAsset, $inactiveAsset, $fractionalAsset] as $asset) {
+            WalletAsset::query()->create([
+                'wallet_id' => $wallet->getKey(),
+                'asset_id' => $asset->getKey(),
+                'target_percentage' => 100,
+                'current_quantity' => $asset->is($tradableAsset) ? 150 : 100,
+            ]);
+        }
+
+        $this->actingAs($client)
+            ->get(route('assets.search'))
+            ->assertOk()
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.ticker', 'TEST3');
+
+        $this->actingAs($client)
+            ->get(route('wallets.transactions.create', $wallet))
+            ->assertInertia(fn ($page) => $page
+                ->where('assets.0.id', $tradableAsset->getKey())
+                ->where('assets.0.current_quantity', 150)
+                ->where('wallet.sellableAssetIds', [$tradableAsset->getKey()])
+                ->has('assets', 1));
     }
 
     public function test_transactions_shortcut_redirects_to_wallet_selection(): void
@@ -135,7 +181,7 @@ class TransactionManagementTest extends TestCase
         $response = $this->actingAs($client)->post(route('wallets.transactions.store', $wallet), [
             'asset_id' => $asset->getKey(),
             'transaction_type' => 'buy',
-            'quantity' => 5,
+            'quantity' => 100,
             'transaction_date' => today()->toDateString(),
         ]);
 
@@ -146,13 +192,13 @@ class TransactionManagementTest extends TestCase
             'wallet_id' => $wallet->getKey(),
             'asset_id' => $asset->getKey(),
             'transaction_type' => 'buy',
-            'quantity' => 5,
+            'quantity' => 100,
             'unit_price' => '42.50',
         ]);
         $this->assertDatabaseHas('wallet_assets', [
             'wallet_id' => $wallet->getKey(),
             'asset_id' => $asset->getKey(),
-            'current_quantity' => 5,
+            'current_quantity' => 100,
             'target_percentage' => '25.00',
         ]);
     }
@@ -168,7 +214,7 @@ class TransactionManagementTest extends TestCase
             ->post(route('wallets.transactions.store', $wallet), [
                 'asset_id' => $asset->getKey(),
                 'transaction_type' => 'buy',
-                'quantity' => 1,
+                'quantity' => 100,
                 'transaction_date' => today()->toDateString(),
             ]);
 
@@ -193,13 +239,13 @@ class TransactionManagementTest extends TestCase
             'wallet_id' => $wallet->getKey(),
             'asset_id' => $asset->getKey(),
             'target_percentage' => 25,
-            'current_quantity' => 8,
+            'current_quantity' => 200,
         ]);
 
         $response = $this->actingAs($client)->post(route('wallets.transactions.store', $wallet), [
             'asset_id' => $asset->getKey(),
             'transaction_type' => 'sell',
-            'quantity' => 3,
+            'quantity' => 100,
             'transaction_date' => today()->toDateString(),
         ]);
 
@@ -207,11 +253,11 @@ class TransactionManagementTest extends TestCase
         $this->assertDatabaseHas('wallet_assets', [
             'wallet_id' => $wallet->getKey(),
             'asset_id' => $asset->getKey(),
-            'current_quantity' => 5,
+            'current_quantity' => 100,
         ]);
         $this->assertDatabaseHas('transactions', [
             'transaction_type' => 'sell',
-            'quantity' => 3,
+            'quantity' => 100,
             'unit_price' => '42.50',
         ]);
     }
@@ -225,14 +271,14 @@ class TransactionManagementTest extends TestCase
             'wallet_id' => $wallet->getKey(),
             'asset_id' => $asset->getKey(),
             'target_percentage' => 25,
-            'current_quantity' => 2,
+            'current_quantity' => 200,
         ]);
 
         $response = $this->actingAs($client)->from(route('wallets.transactions.create', $wallet))
             ->post(route('wallets.transactions.store', $wallet), [
                 'asset_id' => $asset->getKey(),
                 'transaction_type' => 'sell',
-                'quantity' => 3,
+                'quantity' => 300,
                 'transaction_date' => today()->toDateString(),
             ]);
 
@@ -241,7 +287,106 @@ class TransactionManagementTest extends TestCase
         $this->assertDatabaseHas('wallet_assets', [
             'wallet_id' => $wallet->getKey(),
             'asset_id' => $asset->getKey(),
-            'current_quantity' => 2,
+            'current_quantity' => 200,
+        ]);
+    }
+
+    /**
+     * @return array<string, array{string, int, int, string}>
+     */
+    public static function invalidTransactionLots(): array
+    {
+        return [
+            'below minimum' => ['buy', 50, 0, 'O campo quantidade deve ser pelo menos 100.'],
+            'buy not in a lot' => ['buy', 150, 0, 'O campo quantidade deve ser um múltiplo de 100.'],
+            'sell not in a lot' => ['sell', 150, 200, 'O campo quantidade deve ser um múltiplo de 100.'],
+        ];
+    }
+
+    #[DataProvider('invalidTransactionLots')]
+    public function test_client_cannot_register_a_transaction_with_a_quantity_outside_a_lot(
+        string $type,
+        int $quantity,
+        int $openingQuantity,
+        string $expectedError,
+    ): void {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = $this->asset();
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 25,
+            'current_quantity' => $openingQuantity,
+        ]);
+
+        $response = $this->from(route('wallets.transactions.create', $wallet))
+            ->actingAs($client)
+            ->post(route('wallets.transactions.store', $wallet), [
+                'asset_id' => $asset->getKey(),
+                'transaction_type' => $type,
+                'quantity' => $quantity,
+                'transaction_date' => today()->toDateString(),
+            ]);
+
+        $response->assertSessionHasErrors(['quantity' => $expectedError]);
+        $this->assertDatabaseMissing('transactions', ['wallet_id' => $wallet->getKey()]);
+        $this->assertDatabaseHas('wallet_assets', [
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'current_quantity' => $openingQuantity,
+        ]);
+    }
+
+    /**
+     * @return array<string, array{string, bool}>
+     */
+    public static function unavailableAssets(): array
+    {
+        return [
+            'inactive ticker' => ['OFF3', false],
+            'fractional ticker' => ['FRAC3F', true],
+        ];
+    }
+
+    #[DataProvider('unavailableAssets')]
+    public function test_client_cannot_register_a_transaction_for_an_inactive_or_fractional_asset(
+        string $ticker,
+        bool $isActive,
+    ): void {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = Asset::query()->create([
+            'ticker' => $ticker,
+            'name' => 'Ativo não permitido',
+            'sector' => 'Tecnologia',
+            'current_price' => '42.50',
+            'is_active' => $isActive,
+        ]);
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+            'current_quantity' => 200,
+        ]);
+
+        $response = $this->from(route('wallets.transactions.create', $wallet))
+            ->actingAs($client)
+            ->post(route('wallets.transactions.store', $wallet), [
+                'asset_id' => $asset->getKey(),
+                'transaction_type' => 'sell',
+                'quantity' => 100,
+                'transaction_date' => today()->toDateString(),
+            ]);
+
+        $response->assertSessionHasErrors([
+            'asset_id' => 'Este ativo está inativo ou não está disponível para movimentações.',
+        ]);
+        $this->assertDatabaseMissing('transactions', ['wallet_id' => $wallet->getKey()]);
+        $this->assertDatabaseHas('wallet_assets', [
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'current_quantity' => 200,
         ]);
     }
 
@@ -260,7 +405,7 @@ class TransactionManagementTest extends TestCase
         $response = $this->actingAs($client)->post(route('wallets.transactions.store', $wallet), [
             'asset_id' => $asset->getKey(),
             'transaction_type' => 'buy',
-            'quantity' => 1,
+            'quantity' => 100,
             'transaction_date' => today()->toDateString(),
             'target_percentage' => 80,
         ]);
@@ -270,7 +415,7 @@ class TransactionManagementTest extends TestCase
             'wallet_id' => $wallet->getKey(),
             'asset_id' => $asset->getKey(),
             'target_percentage' => '25.00',
-            'current_quantity' => 1,
+            'current_quantity' => 100,
         ]);
     }
 
@@ -285,7 +430,7 @@ class TransactionManagementTest extends TestCase
             ->post(route('wallets.transactions.store', $wallet), [
                 'asset_id' => $asset->getKey(),
                 'transaction_type' => 'buy',
-                'quantity' => 1,
+                'quantity' => 100,
                 'transaction_date' => today()->subDay()->toDateString(),
                 'target_percentage' => 25,
             ]);
@@ -305,7 +450,7 @@ class TransactionManagementTest extends TestCase
             ->post(route('wallets.transactions.store', $wallet), [
                 'asset_id' => $asset->getKey(),
                 'transaction_type' => 'buy',
-                'quantity' => 1,
+                'quantity' => 100,
                 'transaction_date' => today()->toDateString(),
                 'target_percentage' => 25,
             ]);

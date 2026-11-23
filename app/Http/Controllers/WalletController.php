@@ -71,6 +71,7 @@ class WalletController extends Controller
         ]);
 
         $assets = Asset::query()
+            ->tradable()
             ->select(['id', 'ticker', 'name', 'sector', 'current_price'])
             ->when($filters['q'] ?? null, function ($query, string $term): void {
                 $query->where(function ($query) use ($term): void {
@@ -207,13 +208,26 @@ class WalletController extends Controller
     {
         Gate::authorize('delete', $wallet);
 
-        if ($wallet->assets()->exists()) {
+        $hasHoldings = DB::transaction(function () use ($wallet): bool {
+            $wallet = Wallet::query()
+                ->whereKey($wallet->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($wallet->assets()->where('current_quantity', '>', 0)->exists()) {
+                return true;
+            }
+
+            $wallet->delete();
+
+            return false;
+        });
+
+        if ($hasHoldings) {
             return response()->json([
-                'message' => 'Não é possível excluir uma carteira com ativos associados. Remova ou transfira os ativos antes de excluir.',
+                'message' => 'Não é possível excluir uma carteira enquanto houver ativos em custódia. Venda os ativos antes de excluir.',
             ], 409);
         }
-
-        $wallet->delete();
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Carteira excluída')]);
 
@@ -251,9 +265,9 @@ class WalletController extends Controller
     private function assetSectors(): array
     {
         return Cache::remember(
-            'asset_sectors_v2',
+            'asset_sectors_v3',
             now()->addMinutes(5),
-            fn(): array => Asset::query()->select('sector')->distinct()->orderBy('sector')->pluck('sector')->all()
+            fn (): array => Asset::query()->tradable()->select('sector')->distinct()->orderBy('sector')->pluck('sector')->all()
         );
     }
 }

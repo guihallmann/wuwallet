@@ -179,6 +179,80 @@ class WalletManagementTest extends TestCase
         ]);
     }
 
+    public function test_client_can_delete_a_wallet_with_zero_balances_and_transaction_history(): void
+    {
+        $client = $this->clientFor($this->analystFor($this->manager()));
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = Asset::query()->create([
+            'ticker' => 'SOLD3',
+            'name' => 'Ativo vendido',
+            'sector' => 'Tecnologia',
+            'current_price' => 10,
+        ]);
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+            'current_quantity' => 0,
+        ]);
+        $wallet->transactions()->create([
+            'asset_id' => $asset->getKey(),
+            'transaction_type' => 'buy',
+            'quantity' => 100,
+            'unit_price' => 10,
+            'transaction_date' => today(),
+        ]);
+        $wallet->transactions()->create([
+            'asset_id' => $asset->getKey(),
+            'transaction_type' => 'sell',
+            'quantity' => 100,
+            'unit_price' => 10,
+            'transaction_date' => today(),
+        ]);
+
+        $this->actingAs($client)
+            ->delete(route('wallets.destroy', $wallet))
+            ->assertRedirect(route('wallets.index'));
+
+        $this->assertDatabaseMissing('wallets', ['id' => $wallet->getKey()]);
+        $this->assertDatabaseMissing('wallet_assets', ['wallet_id' => $wallet->getKey()]);
+        $this->assertDatabaseMissing('transactions', ['wallet_id' => $wallet->getKey()]);
+        $this->assertDatabaseHas('assets', ['id' => $asset->getKey()]);
+    }
+
+    public function test_client_cannot_delete_a_wallet_with_assets_in_custody(): void
+    {
+        $client = $this->clientFor($this->analystFor($this->manager()));
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = Asset::query()->create([
+            'ticker' => 'HOLD3',
+            'name' => 'Ativo em custódia',
+            'sector' => 'Tecnologia',
+            'current_price' => 10,
+        ]);
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+            'current_quantity' => 100,
+        ]);
+
+        $this->actingAs($client)
+            ->delete(route('wallets.destroy', $wallet))
+            ->assertStatus(409)
+            ->assertJsonPath(
+                'message',
+                'Não é possível excluir uma carteira enquanto houver ativos em custódia. Venda os ativos antes de excluir.',
+            );
+
+        $this->assertDatabaseHas('wallets', ['id' => $wallet->getKey()]);
+        $this->assertDatabaseHas('wallet_assets', [
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'current_quantity' => 100,
+        ]);
+    }
+
     public function test_client_can_create_edit_and_delete_own_wallet(): void
     {
         $manager = $this->manager();

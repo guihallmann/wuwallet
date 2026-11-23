@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { formatCurrency } from '@/lib/utils';
 import { index as walletsIndex, show as walletsShow } from '@/routes/wallets';
 import {
     create as createWalletTransaction,
@@ -22,6 +23,8 @@ type AssetOption = {
     id: number;
     ticker: string;
     name: string;
+    current_price: number;
+    current_quantity: number;
 };
 
 type Props = {
@@ -33,6 +36,7 @@ type Props = {
 export default function TransactionsCreate({ wallet, assets, today }: Props) {
     const [assetId, setAssetId] = useState('');
     const [type, setType] = useState<'buy' | 'sell'>('buy');
+    const [quantity, setQuantity] = useState('');
     useEffect(() => {
         setLayoutProps({
             breadcrumbs: [
@@ -59,6 +63,14 @@ export default function TransactionsCreate({ wallet, assets, today }: Props) {
                   wallet.sellableAssetIds.includes(asset.id),
               )
             : assets;
+    const selectedAsset = assets.find(
+        (asset) => asset.id === Number(assetId),
+    );
+    const sellableQuantity = selectedAsset
+        ? Math.floor(selectedAsset.current_quantity / 100) * 100
+        : 0;
+    const estimatedValue =
+        Number(quantity) * (selectedAsset?.current_price ?? 0);
 
     return (
         <>
@@ -78,9 +90,9 @@ export default function TransactionsCreate({ wallet, assets, today }: Props) {
 
                 {assets.length === 0 ? (
                     <p className="border-border text-muted-foreground max-w-2xl rounded-xl border p-6 text-sm">
-                        Nenhum ativo está cadastrado nesta carteira. Edite a
-                        carteira para adicionar ativos antes de registrar uma
-                        movimentação.
+                        Nenhum ativo disponível para movimentação está
+                        cadastrado nesta carteira. Ativos inativos e tickers
+                        fracionários não podem ser movimentados.
                     </p>
                 ) : (
                     <div className="border-border bg-card max-w-2xl rounded-xl border p-6 shadow-sm">
@@ -105,6 +117,7 @@ export default function TransactionsCreate({ wallet, assets, today }: Props) {
                                                         | 'sell',
                                                 );
                                                 setAssetId('');
+                                                setQuantity('');
                                             }}
                                             required
                                             className="border-input bg-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2"
@@ -123,9 +136,10 @@ export default function TransactionsCreate({ wallet, assets, today }: Props) {
                                             id="asset_id"
                                             name="asset_id"
                                             value={assetId}
-                                            onChange={(event) =>
-                                                setAssetId(event.target.value)
-                                            }
+                                            onChange={(event) => {
+                                                setAssetId(event.target.value);
+                                                setQuantity('');
+                                            }}
                                             required
                                             className="border-input bg-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2"
                                         >
@@ -145,25 +159,81 @@ export default function TransactionsCreate({ wallet, assets, today }: Props) {
                                         {type === 'sell' &&
                                             availableAssets.length === 0 && (
                                                 <p className="text-muted-foreground text-sm">
-                                                    Esta carteira ainda não
-                                                    possui ativos para venda.
+                                                    Esta carteira não possui
+                                                    lotes de 100 ações
+                                                    disponíveis para venda.
                                                 </p>
                                             )}
                                         <InputError message={errors.asset_id} />
                                     </div>
 
                                     <div className="grid gap-2">
-                                        <Label htmlFor="quantity">
-                                            Quantidade
-                                        </Label>
-                                        <Input
-                                            id="quantity"
-                                            name="quantity"
-                                            type="number"
-                                            min="1"
-                                            step="1"
-                                            required
-                                        />
+                                        <div className="flex items-center justify-between gap-2">
+                                            <Label htmlFor="quantity">
+                                                Quantidade
+                                            </Label>
+                                            {type === 'sell' &&
+                                                selectedAsset && (
+                                                    <span className="text-muted-foreground text-sm">
+                                                        Saldo em custódia:{' '}
+                                                        {selectedAsset.current_quantity}
+                                                    </span>
+                                                )}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                id="quantity"
+                                                name="quantity"
+                                                type="number"
+                                                min="100"
+                                                max={
+                                                    type === 'sell'
+                                                        ? sellableQuantity
+                                                        : undefined
+                                                }
+                                                step="100"
+                                                value={quantity}
+                                                onChange={(event) =>
+                                                    setQuantity(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                required
+                                            />
+                                            {type === 'sell' &&
+                                                selectedAsset && (
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        onClick={() =>
+                                                            setQuantity(
+                                                                String(
+                                                                    sellableQuantity,
+                                                                ),
+                                                            )
+                                                        }
+                                                    >
+                                                        Adicionar tudo
+                                                    </Button>
+                                                )}
+                                        </div>
+                                        {type === 'sell' && selectedAsset && (
+                                            <p className="text-muted-foreground text-sm">
+                                                Disponível para venda em lotes
+                                                de 100:{' '}
+                                                {sellableQuantity}
+                                            </p>
+                                        )}
+                                        {selectedAsset &&
+                                            Number.isFinite(estimatedValue) &&
+                                            estimatedValue > 0 && (
+                                                <p className="text-muted-foreground text-sm">
+                                                    Valor estimado:{' '}
+                                                    {formatCurrency(
+                                                        estimatedValue,
+                                                    )}
+                                                </p>
+                                            )}
                                         <InputError message={errors.quantity} />
                                     </div>
 
