@@ -203,9 +203,15 @@ class WalletController extends Controller
         return to_route('wallets.index');
     }
 
-    public function destroy(Wallet $wallet): RedirectResponse
+    public function destroy(Wallet $wallet): RedirectResponse|JsonResponse
     {
         Gate::authorize('delete', $wallet);
+
+        if ($wallet->assets()->exists()) {
+            return response()->json([
+                'message' => 'Não é possível excluir uma carteira com ativos associados. Remova ou transfira os ativos antes de excluir.',
+            ], 409);
+        }
 
         $wallet->delete();
 
