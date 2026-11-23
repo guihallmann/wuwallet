@@ -46,7 +46,7 @@ class Asset extends Model
         return $query
             ->where('is_active', true)
             ->where('current_price', '>', 0)
-            ->where('ticker', 'not like', '%' . self::FRACTIONAL_SUFFIX);
+            ->where('ticker', 'not like', '%'.self::FRACTIONAL_SUFFIX);
     }
 
     public static function isFractionalTicker(string $ticker): bool

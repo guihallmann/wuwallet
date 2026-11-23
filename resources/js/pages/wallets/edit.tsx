@@ -181,9 +181,7 @@ export default function WalletsEdit({ wallet, sectors = [] }: Props) {
                                         <Button
                                             type="submit"
                                             variant="destructive"
-                                            disabled={
-                                                processing || hasHoldings
-                                            }
+                                            disabled={processing || hasHoldings}
                                         >
                                             {processing && <Spinner />}
                                             Excluir carteira
@@ -194,10 +192,12 @@ export default function WalletsEdit({ wallet, sectors = [] }: Props) {
                         </DialogContent>
                     </Dialog>
                     {hasHoldings && (
-                        <p className="text-destructive mt-3 text-sm" role="alert">
-                            Não é possível excluir esta carteira enquanto
-                            houver ativos em custódia. Venda-os antes de
-                            excluir.
+                        <p
+                            className="text-destructive mt-3 text-sm"
+                            role="alert"
+                        >
+                            Não é possível excluir esta carteira enquanto houver
+                            ativos em custódia. Venda-os antes de excluir.
                         </p>
                     )}
                 </div>
@@ -205,4 +205,3 @@ export default function WalletsEdit({ wallet, sectors = [] }: Props) {
         </>
     );
 }
-

@@ -247,16 +247,15 @@ class WalletController extends Controller
                 'objective_text' => $wallet->objective_text,
                 'total_value' => $wallet->totalValue(),
                 'assets_count' => $wallet->assets->count(),
-                'allocation' => $wallet->assets
-                    ->sortByDesc(fn($walletAsset): float => (float) $walletAsset->target_percentage)
-                    ->map(fn($walletAsset): array => [
+                'allocation' => array_values($wallet->assets
+                    ->sortByDesc(fn(WalletAsset $walletAsset): float => (float) $walletAsset->target_percentage)
+                    ->map(fn(WalletAsset $walletAsset): array => [
                         'ticker' => $walletAsset->asset->ticker,
                         'name' => $walletAsset->asset->name,
                         'target_percentage' => $walletAsset->target_percentage,
                         'current_quantity' => $walletAsset->current_quantity,
                     ])
-                    ->values()
-                    ->all(),
+                    ->all()),
             ])
             ->all());
     }
@@ -264,10 +263,13 @@ class WalletController extends Controller
     /** @return list<string> */
     private function assetSectors(): array
     {
-        return Cache::remember(
+        /** @var list<string> $sectors */
+        $sectors = Cache::remember(
             Asset::SECTORS_CACHE_KEY,
             now()->addMinutes(5),
             fn(): array => Asset::query()->tradable()->select('sector')->distinct()->orderBy('sector')->pluck('sector')->all()
         );
+
+        return $sectors;
     }
 }

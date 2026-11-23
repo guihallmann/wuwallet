@@ -78,7 +78,7 @@ class AssetSyncTest extends TestCase
 
         $this->artisan('assets:sync')->assertSuccessful();
 
-        Http::assertSent(fn(Request $request): bool => str_contains($request->url(), '/api/v2/tickers')
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), '/api/v2/tickers')
             && $request['type'] === 'stock'
             && $request['sortBy'] === 'symbol'
             && $request['sortOrder'] === 'asc');
@@ -188,7 +188,7 @@ class AssetSyncTest extends TestCase
     public function test_it_is_scheduled_daily_at_midnight_sao_paulo(): void
     {
         $event = collect(app(Schedule::class)->events())
-            ->first(fn(Event $e): bool => str_contains($e->command, 'assets:sync'));
+            ->first(fn (Event $e): bool => str_contains($e->command, 'assets:sync'));
 
         $this->assertNotNull($event);
         $this->assertSame('0 0 * * *', $event->expression);

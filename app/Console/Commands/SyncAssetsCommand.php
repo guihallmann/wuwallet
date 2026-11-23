@@ -21,7 +21,7 @@ class SyncAssetsCommand extends Command
         try {
             $summary = $service->sync();
         } catch (BrapiException $e) {
-            $this->error('Asset sync failed: ' . $e->getMessage());
+            $this->error('Asset sync failed: '.$e->getMessage());
 
             return self::FAILURE;
         }

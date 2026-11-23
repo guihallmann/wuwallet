@@ -31,7 +31,7 @@ class StoreTransactionRequest extends FormRequest
         return [
             'asset_id' => ['required', 'integer', 'exists:assets,id'],
             'transaction_type' => ['required', Rule::enum(TransactionType::class)],
-            'quantity' => ['required', 'integer', 'min:' . Asset::LOT_SIZE, 'multiple_of:' . Asset::LOT_SIZE, 'max:4294967295'],
+            'quantity' => ['required', 'integer', 'min:'.Asset::LOT_SIZE, 'multiple_of:'.Asset::LOT_SIZE, 'max:4294967295'],
             'transaction_date' => ['required', 'date_format:Y-m-d', 'date_equals:today'],
         ];
     }
