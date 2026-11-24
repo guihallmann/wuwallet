@@ -354,6 +354,8 @@ function BuyRow({
                                     quantity: item.quantity,
                                 },
                             })}
+                            target="_blank"
+                            rel="noopener noreferrer"
                         >
                             Registrar compra
                         </Link>
