@@ -10,6 +10,7 @@ use App\Models\Asset;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletAsset;
+use App\Services\BuySuggestionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -109,14 +110,25 @@ class WalletController extends Controller
         return to_route('wallets.index');
     }
 
-    public function show(Wallet $wallet): Response
+    public function show(Request $request, Wallet $wallet, BuySuggestionService $suggestions): Response
     {
         Gate::authorize('view', $wallet);
+
+        $amount = $request->has('amount')
+            ? $request->validate(
+                ['amount' => ['required', 'numeric', 'gt:0', 'max:100000000', 'decimal:0,2']],
+                [],
+                ['amount' => 'valor do aporte'],
+            )['amount']
+            : null;
 
         $wallet->load('assets.asset');
         $totalValue = $wallet->totalValue();
 
         return Inertia::render('wallets/show', [
+            'suggestion' => Inertia::optional(fn(): ?array => $amount === null
+                ? null
+                : $suggestions->suggest($wallet, (int) round((float) $amount * 100))),
             'wallet' => [
                 ...$wallet->only(['id', 'name', 'objective_text']),
                 'total_value' => $totalValue,

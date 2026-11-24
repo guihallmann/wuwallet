@@ -84,7 +84,7 @@ class DatabaseSeeder extends Seeder
         if ($exitCode === 0) {
             $this->command->info($output);
         } else {
-            $this->command->warn($output . ' Rode `php artisan assets:sync` manualmente depois.');
+            $this->command->warn($output.' Rode `php artisan assets:sync` manualmente depois.');
         }
     }
 }

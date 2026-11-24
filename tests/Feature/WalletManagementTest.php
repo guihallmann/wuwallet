@@ -53,7 +53,7 @@ class WalletManagementTest extends TestCase
         $response = $this->actingAs($client)->get(route('wallets.index'));
 
         $response->assertOk();
-        $response->assertInertia(fn($page) => $page
+        $response->assertInertia(fn ($page) => $page
             ->component('wallets/index')
             ->where('mode', 'manage')
             ->has('wallets', 1)
@@ -83,7 +83,7 @@ class WalletManagementTest extends TestCase
 
         $response = $this->actingAs($client)->get(route('wallets.index'));
 
-        $response->assertInertia(fn($page) => $page
+        $response->assertInertia(fn ($page) => $page
             ->where('wallets.0.total_value', 300)
             ->where('wallets.0.allocation.0.current_quantity', 10)
             ->where('totalValue', 300));
@@ -111,7 +111,7 @@ class WalletManagementTest extends TestCase
 
         $this->actingAs($client)->get(route('wallets.show', $wallet))
             ->assertOk()
-            ->assertInertia(fn($page) => $page
+            ->assertInertia(fn ($page) => $page
                 ->component('wallets/show')
                 ->where('wallet.total_value', 300)
                 ->where('wallet.assets.0.ticker', 'PETR4')
@@ -328,7 +328,7 @@ class WalletManagementTest extends TestCase
         $response = $this->actingAs($analyst)->get(route('clients.wallets.index', $client));
 
         $response->assertOk();
-        $response->assertInertia(fn($page) => $page
+        $response->assertInertia(fn ($page) => $page
             ->component('wallets/index')
             ->where('mode', 'view')
             ->where('client.id', $client->getKey())

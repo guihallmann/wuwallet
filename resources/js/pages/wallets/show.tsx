@@ -2,6 +2,8 @@ import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Pencil, Repeat2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import BuySuggestionDialog from '@/components/wallets/buy-suggestion-dialog';
+import type { BuySuggestion } from '@/components/wallets/buy-suggestion-dialog';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { edit, index, show } from '@/routes/wallets';
 import { index as walletTransactionsIndex } from '@/routes/wallets/transactions';
@@ -25,9 +27,10 @@ type Props = {
         total_value: number;
         assets: WalletAsset[];
     };
+    suggestion?: BuySuggestion | null;
 };
 
-export default function WalletsShow({ wallet }: Props) {
+export default function WalletsShow({ wallet, suggestion }: Props) {
     const [sectorFilter, setSectorFilter] = useState('');
     const sectors = useMemo(
         () =>
@@ -67,19 +70,24 @@ export default function WalletsShow({ wallet }: Props) {
                         </p>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button asChild variant="outline">
                             <Link href={edit(wallet.id)}>
                                 <Pencil />
                                 Editar
                             </Link>
                         </Button>
-                        <Button asChild>
+                        <Button asChild variant="outline">
                             <Link href={walletTransactionsIndex(wallet.id)}>
                                 <Repeat2 />
                                 Movimentações
                             </Link>
                         </Button>
+                        <BuySuggestionDialog
+                            walletId={wallet.id}
+                            suggestion={suggestion}
+                            disabled={wallet.assets.length === 0}
+                        />
                     </div>
                 </div>
 
