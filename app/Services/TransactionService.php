@@ -19,9 +19,10 @@ class TransactionService
         int $assetId,
         TransactionType $type,
         int $quantity,
+        string $unitPrice,
         string $transactionDate,
     ): void {
-        DB::transaction(function () use ($assetId, $quantity, $type, $transactionDate, $targetWallet): void {
+        DB::transaction(function () use ($assetId, $quantity, $type, $unitPrice, $transactionDate, $targetWallet): void {
             $wallet = Wallet::query()
                 ->whereKey($targetWallet->getKey())
                 ->lockForUpdate()
@@ -53,9 +54,25 @@ class TransactionService
 
             $currentQuantity = $walletAsset->current_quantity;
 
-            if ($type === TransactionType::SELL && $quantity > $currentQuantity) {
+            $date = Carbon::createFromFormat('Y-m-d', $transactionDate)->startOfDay();
+            $quantityAtDate = $currentQuantity;
+
+            if ($type === TransactionType::SELL) {
+                $laterNetQuantity = (int) $wallet->transactions()
+                    ->where('asset_id', $asset->getKey())
+                    ->whereDate('transaction_date', '>', $date)
+                    ->selectRaw(
+                        'COALESCE(SUM(CASE WHEN transaction_type = ? THEN quantity ELSE -quantity END), 0) as net_quantity',
+                        [TransactionType::BUY->value],
+                    )
+                    ->value('net_quantity');
+
+                $quantityAtDate -= $laterNetQuantity;
+            }
+
+            if ($type === TransactionType::SELL && ($quantity > $currentQuantity || $quantity > $quantityAtDate)) {
                 throw ValidationException::withMessages([
-                    'quantity' => __('A quantidade da venda supera o saldo disponível na carteira.'),
+                    'quantity' => __('A quantidade da venda supera o saldo disponível na data informada.'),
                 ]);
             }
 
@@ -76,8 +93,8 @@ class TransactionService
                 'asset_id' => $asset->getKey(),
                 'transaction_type' => $type,
                 'quantity' => $quantity,
-                'unit_price' => $asset->current_price,
-                'transaction_date' => Carbon::createFromFormat('Y-m-d', $transactionDate)->startOfDay(),
+                'unit_price' => $unitPrice,
+                'transaction_date' => $date,
             ]);
         });
     }

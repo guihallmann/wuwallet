@@ -10,15 +10,17 @@ Route::middleware('auth')->group(function () {
     Route::get('assets/search', [WalletController::class, 'searchAssets'])
         ->name('assets.search');
 
-    Route::get('transactions', fn () => to_route('wallets.index'))
+    Route::get('transactions', fn() => to_route('wallets.index'))
         ->name('transactions.index');
-    Route::get('transactions/create', fn () => to_route('wallets.index'))
+    Route::get('transactions/create', fn() => to_route('wallets.index'))
         ->name('transactions.create');
 
     Route::get('wallets/{wallet}/transactions', [TransactionController::class, 'index'])
         ->name('wallets.transactions.index');
     Route::get('wallets/{wallet}/transactions/create', [TransactionController::class, 'create'])
         ->name('wallets.transactions.create');
+    Route::get('wallets/{wallet}/transactions/price', [TransactionController::class, 'price'])
+        ->name('wallets.transactions.price');
     Route::post('wallets/{wallet}/transactions', [TransactionController::class, 'store'])
         ->name('wallets.transactions.store');
 

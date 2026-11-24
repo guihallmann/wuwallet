@@ -15,6 +15,8 @@ class BrapiClient
 {
     private const TICKERS_PATH = '/api/v2/tickers';
 
+    private const HISTORICAL_PRICES_PATH = '/api/v2/stocks/historical';
+
     private const MAX_BACKOFF_SECONDS = 30;
 
     private const DEFAULT_RETRY_AFTER_SECONDS = 60;
@@ -71,6 +73,48 @@ class BrapiClient
     }
 
     /**
+     * Fetches the daily closing price for a ticker on a specific market date.
+     *
+     * @throws BrapiException
+     */
+    public function historicalClose(string $ticker, string $date): ?float
+    {
+        $body = $this->get(self::HISTORICAL_PRICES_PATH, [
+            'symbols' => $ticker,
+            'startDate' => $date,
+            'endDate' => $date,
+            'interval' => '1d',
+            'sortOrder' => 'asc',
+        ]);
+
+        $results = $body['results'] ?? null;
+
+        if (! is_array($results)) {
+            throw new BrapiException('Unexpected brapi response: missing "results".');
+        }
+
+        foreach ($results as $result) {
+            $points = is_array($result) && is_array($result['data'] ?? null)
+                ? ($result['data']['historicalDataPrice'] ?? null)
+                : null;
+
+            if (! is_array($points)) {
+                continue;
+            }
+
+            foreach ($points as $point) {
+                $close = is_array($point) ? ($point['close'] ?? null) : null;
+
+                if (is_numeric($close) && (float) $close > 0) {
+                    return round((float) $close, 2);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param  array<string, scalar>  $query
      * @return array<string, mixed>
      *
@@ -87,7 +131,7 @@ class BrapiClient
                 if ($attempt === $maxAttempts) {
                     $this->logFailure($path, $attempt, null, null, $e->getMessage());
 
-                    throw new BrapiException('brapi connection failed: '.$e->getMessage(), previous: $e);
+                    throw new BrapiException('brapi connection failed: ' . $e->getMessage(), previous: $e);
                 }
 
                 $this->logRetry($path, $attempt, null, null);
@@ -110,7 +154,7 @@ class BrapiClient
                 $this->logFailure($path, $attempt, $status, $code, $this->errorMessage($response));
 
                 throw new BrapiException(
-                    "brapi request failed with status {$status}".($code !== null ? " ({$code})" : ''),
+                    "brapi request failed with status {$status}" . ($code !== null ? " ({$code})" : ''),
                     $status,
                     $code,
                 );

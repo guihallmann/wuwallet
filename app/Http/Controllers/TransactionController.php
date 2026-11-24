@@ -10,8 +10,11 @@ use App\Models\Asset;
 use App\Models\Transaction;
 use App\Models\Wallet;
 use App\Models\WalletAsset;
+use App\Services\Brapi\BrapiClient;
+use App\Services\Brapi\BrapiException;
 use App\Services\TransactionService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -99,6 +102,7 @@ class TransactionController extends Controller
             (int) $data['asset_id'],
             TransactionType::from((string) $data['transaction_type']),
             (int) $data['quantity'],
+            (string) $data['unit_price'],
             (string) $data['transaction_date'],
         );
 
@@ -108,5 +112,30 @@ class TransactionController extends Controller
         ]);
 
         return to_route('wallets.transactions.index', $wallet);
+    }
+
+    public function price(Request $request, Wallet $wallet, BrapiClient $brapi): JsonResponse
+    {
+        Gate::authorize('createTransaction', $wallet);
+
+        $data = $request->validate([
+            'asset_id' => ['required', 'integer'],
+            'date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
+        ]);
+
+        $walletAsset = WalletAsset::query()
+            ->where('wallet_id', $wallet->getKey())
+            ->where('asset_id', $data['asset_id'])
+            ->whereHas('asset', fn(Builder $query) => $query->tradable())
+            ->with('asset:id,ticker')
+            ->firstOrFail();
+
+        try {
+            $unitPrice = $brapi->historicalClose($walletAsset->asset->ticker, $data['date']);
+        } catch (BrapiException) {
+            $unitPrice = null;
+        }
+
+        return response()->json(['unit_price' => $unitPrice]);
     }
 }

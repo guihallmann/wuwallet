@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletAsset;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as ClientRequest;
+use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -95,6 +97,79 @@ class TransactionManagementTest extends TestCase
             ->assertInertia(fn($page) => $page
                 ->where('prefill.asset_id', $asset->getKey())
                 ->where('prefill.quantity', 300));
+    }
+
+    public function test_historical_price_endpoint_returns_the_close_for_a_wallet_asset(): void
+    {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = $this->asset();
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+        ]);
+        config(['services.brapi.base_url' => 'https://brapi.test', 'services.brapi.key' => null]);
+        Http::fake(['brapi.test/*' => Http::response([
+            'results' => [[
+                'data' => ['historicalDataPrice' => [['close' => 38.75]]],
+            ]],
+        ])]);
+
+        $response = $this->actingAs($client)->getJson(route('wallets.transactions.price', $wallet, false) . '?' . http_build_query([
+            'asset_id' => $asset->getKey(),
+            'date' => today()->subWeek()->toDateString(),
+        ]));
+
+        $response->assertOk()->assertJsonPath('unit_price', 38.75);
+        Http::assertSent(fn(ClientRequest $request): bool => str_contains($request->url(), '/api/v2/stocks/historical')
+            && $request['symbols'] === 'TEST3'
+            && $request['startDate'] === today()->subWeek()->toDateString()
+            && $request['endDate'] === today()->subWeek()->toDateString());
+    }
+
+    public function test_historical_price_endpoint_returns_null_when_brapi_has_no_quote(): void
+    {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = $this->asset();
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+        ]);
+        config(['services.brapi.base_url' => 'https://brapi.test', 'services.brapi.key' => null]);
+        Http::fake(['brapi.test/*' => Http::response(['results' => []])]);
+
+        $this->actingAs($client)
+            ->getJson(route('wallets.transactions.price', $wallet, false) . '?' . http_build_query([
+                'asset_id' => $asset->getKey(),
+                'date' => today()->subWeek()->toDateString(),
+            ]))
+            ->assertOk()
+            ->assertJsonPath('unit_price', null);
+    }
+
+    public function test_historical_price_endpoint_returns_null_when_brapi_fails(): void
+    {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = $this->asset();
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+        ]);
+        config(['services.brapi.base_url' => 'https://brapi.test', 'services.brapi.key' => null]);
+        Http::fake(['brapi.test/*' => Http::response(['error' => true], 401)]);
+
+        $this->actingAs($client)
+            ->getJson(route('wallets.transactions.price', $wallet, false) . '?' . http_build_query([
+                'asset_id' => $asset->getKey(),
+                'date' => today()->subWeek()->toDateString(),
+            ]))
+            ->assertOk()
+            ->assertJsonPath('unit_price', null);
     }
 
     /**
@@ -231,6 +306,7 @@ class TransactionManagementTest extends TestCase
             'asset_id' => $asset->getKey(),
             'transaction_type' => 'buy',
             'quantity' => 100,
+            'unit_price' => '42.50',
             'transaction_date' => today()->toDateString(),
         ]);
 
@@ -295,6 +371,7 @@ class TransactionManagementTest extends TestCase
             'asset_id' => $asset->getKey(),
             'transaction_type' => 'sell',
             'quantity' => 100,
+            'unit_price' => '41.25',
             'transaction_date' => today()->toDateString(),
         ]);
 
@@ -307,7 +384,7 @@ class TransactionManagementTest extends TestCase
         $this->assertDatabaseHas('transactions', [
             'transaction_type' => 'sell',
             'quantity' => 100,
-            'unit_price' => '42.50',
+            'unit_price' => '41.25',
         ]);
     }
 
@@ -328,6 +405,7 @@ class TransactionManagementTest extends TestCase
                 'asset_id' => $asset->getKey(),
                 'transaction_type' => 'sell',
                 'quantity' => 300,
+                'unit_price' => '42.50',
                 'transaction_date' => today()->toDateString(),
             ]);
 
@@ -337,6 +415,79 @@ class TransactionManagementTest extends TestCase
             'wallet_id' => $wallet->getKey(),
             'asset_id' => $asset->getKey(),
             'current_quantity' => 200,
+        ]);
+    }
+
+    public function test_backdated_sale_cannot_use_shares_bought_later(): void
+    {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = $this->asset();
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+            'current_quantity' => 100,
+        ]);
+        $wallet->transactions()->create([
+            'asset_id' => $asset->getKey(),
+            'transaction_type' => 'buy',
+            'quantity' => 100,
+            'unit_price' => '42.50',
+            'transaction_date' => today(),
+        ]);
+
+        $response = $this->from(route('wallets.transactions.create', $wallet))
+            ->actingAs($client)
+            ->post(route('wallets.transactions.store', $wallet), [
+                'asset_id' => $asset->getKey(),
+                'transaction_type' => 'sell',
+                'quantity' => 100,
+                'unit_price' => '40.00',
+                'transaction_date' => today()->subDay()->toDateString(),
+            ]);
+
+        $response->assertSessionHasErrors('quantity');
+        $this->assertDatabaseCount('transactions', 1);
+        $this->assertDatabaseHas('wallet_assets', [
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'current_quantity' => 100,
+        ]);
+    }
+
+    public function test_backdated_sale_can_sell_shares_already_held_on_that_date(): void
+    {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = $this->asset();
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+            'current_quantity' => 100,
+        ]);
+        $wallet->transactions()->create([
+            'asset_id' => $asset->getKey(),
+            'transaction_type' => 'buy',
+            'quantity' => 100,
+            'unit_price' => '42.50',
+            'transaction_date' => today()->subWeek(),
+        ]);
+
+        $response = $this->actingAs($client)->post(route('wallets.transactions.store', $wallet), [
+            'asset_id' => $asset->getKey(),
+            'transaction_type' => 'sell',
+            'quantity' => 100,
+            'unit_price' => '40.00',
+            'transaction_date' => today()->subDay()->toDateString(),
+        ]);
+
+        $response->assertRedirect(route('wallets.transactions.index', $wallet));
+        $this->assertDatabaseHas('wallet_assets', [
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'current_quantity' => 0,
         ]);
     }
 
@@ -455,6 +606,7 @@ class TransactionManagementTest extends TestCase
             'asset_id' => $asset->getKey(),
             'transaction_type' => 'buy',
             'quantity' => 100,
+            'unit_price' => '42.50',
             'transaction_date' => today()->toDateString(),
             'target_percentage' => 80,
         ]);
@@ -468,11 +620,44 @@ class TransactionManagementTest extends TestCase
         ]);
     }
 
-    public function test_transaction_date_must_be_today(): void
+    public function test_client_can_register_a_past_transaction_with_its_submitted_price(): void
     {
         $client = $this->client();
         $wallet = Wallet::factory()->for($client)->create();
         $asset = $this->asset();
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+        ]);
+
+        $date = today()->subWeek()->toDateString();
+        $response = $this->actingAs($client)->post(route('wallets.transactions.store', $wallet), [
+            'asset_id' => $asset->getKey(),
+            'transaction_type' => 'buy',
+            'quantity' => 100,
+            'unit_price' => '38.75',
+            'transaction_date' => $date,
+        ]);
+
+        $response->assertRedirect(route('wallets.transactions.index', $wallet));
+        $this->assertDatabaseHas('transactions', [
+            'wallet_id' => $wallet->getKey(),
+            'unit_price' => '38.75',
+            'transaction_date' => $date . ' 00:00:00',
+        ]);
+    }
+
+    public function test_transaction_date_cannot_be_in_the_future(): void
+    {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = $this->asset();
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+        ]);
 
         $response = $this->from(route('wallets.transactions.create', $wallet))
             ->actingAs($client)
@@ -480,8 +665,8 @@ class TransactionManagementTest extends TestCase
                 'asset_id' => $asset->getKey(),
                 'transaction_type' => 'buy',
                 'quantity' => 100,
-                'transaction_date' => today()->subDay()->toDateString(),
-                'target_percentage' => 25,
+                'unit_price' => '42.50',
+                'transaction_date' => today()->addDay()->toDateString(),
             ]);
 
         $response->assertSessionHasErrors('transaction_date');
@@ -573,7 +758,20 @@ class TransactionManagementTest extends TestCase
             ->assertRedirect(route('login'));
         $this->get(route('wallets.transactions.create', $wallet))
             ->assertRedirect(route('login'));
+        $this->get(route('wallets.transactions.price', $wallet) . '?asset_id=1&date=' . today()->toDateString())
+            ->assertRedirect(route('login'));
         $this->post(route('wallets.transactions.store', $wallet))
             ->assertRedirect(route('login'));
+    }
+
+    public function test_client_cannot_fetch_a_historical_price_for_another_clients_wallet(): void
+    {
+        $client = $this->client();
+        $otherClient = $this->client();
+        $wallet = Wallet::factory()->for($otherClient)->create();
+
+        $this->actingAs($client)
+            ->getJson(route('wallets.transactions.price', $wallet) . '?asset_id=1&date=' . today()->toDateString())
+            ->assertForbidden();
     }
 }

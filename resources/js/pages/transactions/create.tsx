@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Form, Head, Link, setLayoutProps } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { index as walletsIndex, show as walletsShow } from '@/routes/wallets';
 import {
     create as createWalletTransaction,
     index as walletTransactionsIndex,
+    price as walletTransactionPrice,
     store as storeWalletTransaction,
 } from '@/routes/wallets/transactions';
 
@@ -47,6 +48,12 @@ export default function TransactionsCreate({
     const [quantity, setQuantity] = useState(
         prefill ? String(prefill.quantity) : '',
     );
+    const [date, setDate] = useState(today);
+    const [unitPrice, setUnitPrice] = useState('');
+    const manualPrice = useRef(false);
+    const [priceStatus, setPriceStatus] = useState<
+        'idle' | 'loading' | 'current' | 'historical' | 'unavailable'
+    >('idle');
     useEffect(() => {
         setLayoutProps({
             breadcrumbs: [
@@ -67,18 +74,96 @@ export default function TransactionsCreate({
         });
     }, [wallet.id, wallet.name]);
 
+    const selectedAsset = assets.find((asset) => asset.id === Number(assetId));
+    const selectedAssetId = selectedAsset?.id;
+    const currentPrice = selectedAsset?.current_price;
+
+    useEffect(() => {
+        if (selectedAssetId === undefined || currentPrice === undefined) {
+            manualPrice.current = false;
+            setUnitPrice('');
+            setPriceStatus('idle');
+
+            return;
+        }
+
+        if (date === today) {
+            manualPrice.current = false;
+            setUnitPrice(currentPrice.toFixed(2));
+            setPriceStatus('current');
+
+            return;
+        }
+
+        const controller = new AbortController();
+        manualPrice.current = false;
+        setUnitPrice('');
+        setPriceStatus('loading');
+
+        const loadPrice = async () => {
+            try {
+                const response = await fetch(
+                    walletTransactionPrice.url(wallet.id, {
+                        query: { asset_id: selectedAssetId, date },
+                    }),
+                    {
+                        headers: { Accept: 'application/json' },
+                        signal: controller.signal,
+                    },
+                );
+
+                if (!response.ok) {
+                    throw new Error('Historical quote unavailable');
+                }
+
+                const body: unknown = await response.json();
+                const value =
+                    body !== null &&
+                    typeof body === 'object' &&
+                    'unit_price' in body
+                        ? body.unit_price
+                        : null;
+
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                if (manualPrice.current) {
+                    return;
+                }
+
+                if (
+                    typeof value === 'number' &&
+                    Number.isFinite(value) &&
+                    value > 0
+                ) {
+                    setUnitPrice(value.toFixed(2));
+                    setPriceStatus('historical');
+                } else {
+                    setPriceStatus('unavailable');
+                }
+            } catch {
+                if (!controller.signal.aborted) {
+                    setPriceStatus('unavailable');
+                }
+            }
+        };
+
+        void loadPrice();
+
+        return () => controller.abort();
+    }, [currentPrice, date, selectedAssetId, today, wallet.id]);
+
     const availableAssets =
         type === 'sell'
             ? assets.filter((asset) =>
                   wallet.sellableAssetIds.includes(asset.id),
               )
             : assets;
-    const selectedAsset = assets.find((asset) => asset.id === Number(assetId));
     const sellableQuantity = selectedAsset
         ? Math.floor(selectedAsset.current_quantity / 100) * 100
         : 0;
-    const estimatedValue =
-        Number(quantity) * (selectedAsset?.current_price ?? 0);
+    const estimatedValue = Number(quantity) * Number(unitPrice);
 
     return (
         <>
@@ -90,9 +175,8 @@ export default function TransactionsCreate({
                         Registrar movimentação
                     </h1>
                     <p className="text-muted-foreground mt-1 text-sm">
-                        Carteira:{' '}
-                        <span className="font-medium">{wallet.name}</span>. A
-                        cotação atual do ativo será salva com a movimentação.
+                        Informe a data e o preço unitário praticado. Carteira:{' '}
+                        <span className="font-medium">{wallet.name}</span>.
                     </p>
                 </div>
 
@@ -147,6 +231,7 @@ export default function TransactionsCreate({
                                             onChange={(event) => {
                                                 setAssetId(event.target.value);
                                                 setQuantity('');
+                                                setUnitPrice('');
                                             }}
                                             required
                                             className="border-input bg-background focus-visible:ring-ring h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-2"
@@ -173,6 +258,56 @@ export default function TransactionsCreate({
                                                 </p>
                                             )}
                                         <InputError message={errors.asset_id} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="unit_price">
+                                            Preço unitário da operação
+                                        </Label>
+                                        <Input
+                                            id="unit_price"
+                                            name="unit_price"
+                                            type="number"
+                                            min="0.01"
+                                            step="0.01"
+                                            value={unitPrice}
+                                            onChange={(event) => {
+                                                manualPrice.current = true;
+                                                setUnitPrice(
+                                                    event.target.value,
+                                                );
+                                            }}
+                                            required
+                                        />
+                                        {priceStatus === 'loading' && (
+                                            <p className="text-muted-foreground text-sm">
+                                                Consultando cotação histórica...
+                                            </p>
+                                        )}
+                                        {priceStatus === 'current' && (
+                                            <p className="text-muted-foreground text-sm">
+                                                Cotação atual sugerida. Ajuste
+                                                para o preço efetivamente
+                                                praticado.
+                                            </p>
+                                        )}
+                                        {priceStatus === 'historical' && (
+                                            <p className="text-muted-foreground text-sm">
+                                                Fechamento histórico sugerido.
+                                                Ajuste para o preço efetivamente
+                                                praticado.
+                                            </p>
+                                        )}
+                                        {priceStatus === 'unavailable' && (
+                                            <p className="text-muted-foreground text-sm">
+                                                Cotação histórica indisponível.
+                                                Informe o preço unitário da
+                                                operação.
+                                            </p>
+                                        )}
+                                        <InputError
+                                            message={errors.unit_price}
+                                        />
                                     </div>
 
                                     <div className="grid gap-2">
@@ -254,9 +389,12 @@ export default function TransactionsCreate({
                                             id="transaction_date"
                                             name="transaction_date"
                                             type="date"
-                                            min={today}
                                             max={today}
-                                            defaultValue={today}
+                                            value={date}
+                                            onChange={(event) => {
+                                                setDate(event.target.value);
+                                                setUnitPrice('');
+                                            }}
                                             required
                                         />
                                         <InputError

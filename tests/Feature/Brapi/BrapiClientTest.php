@@ -39,9 +39,38 @@ class BrapiClientTest extends TestCase
 
         $this->assertSame(['AAA3', 'BBB4'], array_column($results, 'symbol'));
         Http::assertSentCount(2);
-        Http::assertSent(fn (Request $r): bool => str_contains($r->url(), 'type=stock')
+        Http::assertSent(fn(Request $r): bool => str_contains($r->url(), 'type=stock')
             && str_contains($r->url(), 'page=2')
             && str_contains($r->url(), 'limit=2000'));
+    }
+
+    public function test_it_fetches_a_daily_close_for_the_requested_date(): void
+    {
+        Http::fake(['brapi.test/*' => Http::response([
+            'results' => [[
+                'data' => [
+                    'historicalDataPrice' => [['close' => 42.567, 'adjustedClose' => 42.567]],
+                ],
+            ]],
+        ])]);
+
+        $close = app(BrapiClient::class)->historicalClose('PETR4', '2026-11-17');
+
+        $this->assertSame(42.57, $close);
+        Http::assertSent(fn(Request $request): bool => str_contains($request->url(), '/api/v2/stocks/historical')
+            && $request['symbols'] === 'PETR4'
+            && $request['startDate'] === '2026-11-17'
+            && $request['endDate'] === '2026-11-17'
+            && $request['interval'] === '1d');
+    }
+
+    public function test_it_returns_null_when_no_daily_close_is_available(): void
+    {
+        Http::fake(['brapi.test/*' => Http::response([
+            'results' => [['data' => ['historicalDataPrice' => []]]],
+        ])]);
+
+        $this->assertNull(app(BrapiClient::class)->historicalClose('PETR4', '2026-11-22'));
     }
 
     public function test_it_throttles_between_pages_without_a_token(): void
@@ -75,11 +104,11 @@ class BrapiClientTest extends TestCase
         Http::fake(['brapi.test/*' => Http::response(['results' => [], 'pagination' => ['hasNextPage' => false]])]);
 
         app(BrapiClient::class)->tickers();
-        Http::assertSent(fn (Request $r): bool => ! $r->hasHeader('Authorization'));
+        Http::assertSent(fn(Request $r): bool => ! $r->hasHeader('Authorization'));
 
         config(['services.brapi.key' => 'secret']);
         app(BrapiClient::class)->tickers();
-        Http::assertSent(fn (Request $r): bool => $r->header('Authorization') === ['Bearer secret']);
+        Http::assertSent(fn(Request $r): bool => $r->header('Authorization') === ['Bearer secret']);
     }
 
     public function test_it_waits_for_retry_after_on_429_then_succeeds(): void
@@ -93,7 +122,7 @@ class BrapiClientTest extends TestCase
         $results = app(BrapiClient::class)->tickers();
 
         $this->assertCount(1, $results);
-        Sleep::assertSlept(fn ($duration): bool => (int) $duration->totalSeconds === 7, 1);
+        Sleep::assertSlept(fn($duration): bool => (int) $duration->totalSeconds === 7, 1);
     }
 
     public function test_it_retries_server_errors_then_throws_when_exhausted(): void
