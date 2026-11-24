@@ -1,6 +1,7 @@
 import { Head, Link, setLayoutProps } from '@inertiajs/react';
 import { Pencil, Repeat2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import BuySuggestionDialog from '@/components/wallets/buy-suggestion-dialog';
 import type { BuySuggestion } from '@/components/wallets/buy-suggestion-dialog';
@@ -30,6 +31,14 @@ type Props = {
     suggestion?: BuySuggestion | null;
 };
 
+const allocationChartColors = [
+    'var(--chart-1)',
+    'var(--chart-2)',
+    'var(--chart-3)',
+    'var(--chart-4)',
+    'var(--chart-5)',
+];
+
 export default function WalletsShow({ wallet, suggestion }: Props) {
     const [sectorFilter, setSectorFilter] = useState('');
     const sectors = useMemo(
@@ -46,6 +55,12 @@ export default function WalletsShow({ wallet, suggestion }: Props) {
     const visibleAssets = sectorFilter
         ? wallet.assets.filter((asset) => asset.sector === sectorFilter)
         : wallet.assets;
+    const allocation = wallet.assets.map((asset, index) => ({
+        ...asset,
+        chartColor:
+            allocationChartColors[index % allocationChartColors.length],
+    }));
+    const chartAssets = allocation.filter((asset) => asset.value > 0);
 
     setLayoutProps({
         breadcrumbs: [
@@ -97,6 +112,102 @@ export default function WalletsShow({ wallet, suggestion }: Props) {
                         {wallet.objective_text ?? '—'}
                     </p>
                 </div>
+
+                {wallet.assets.length > 0 && (
+                    <section className="border-border rounded-xl border p-4">
+                        <h2 className="font-medium">Distribuição da carteira</h2>
+                        <div className="mt-3">
+                            <div
+                                className="h-90 min-w-0 sm:h-105"
+                                role="img"
+                                aria-label={`Distribuição atual da carteira: ${allocation
+                                    .map(
+                                        (asset) =>
+                                            `${asset.ticker}, ${formatCurrency(asset.value)}, ${formatPercentage(asset.current_percentage)}`,
+                                    )
+                                    .join('; ')}`}
+                            >
+                                {chartAssets.length > 0 ? (
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
+                                        <PieChart
+                                            margin={{
+                                                top: 16,
+                                                right: 88,
+                                                bottom: 16,
+                                                left: 88,
+                                            }}
+                                        >
+                                            <Pie
+                                                data={chartAssets}
+                                                dataKey="value"
+                                                nameKey="ticker"
+                                                cx="50%"
+                                                cy="50%"
+                                                outerRadius="54%"
+                                                stroke="var(--background)"
+                                                strokeWidth={2}
+                                                labelLine={{
+                                                    stroke: 'var(--muted-foreground)',
+                                                    strokeWidth: 1,
+                                                }}
+                                                label={({
+                                                    payload,
+                                                    x,
+                                                    y,
+                                                    textAnchor,
+                                                }) => (
+                                                    <text
+                                                        x={x}
+                                                        y={y}
+                                                        textAnchor={textAnchor}
+                                                        fill="var(--foreground)"
+                                                        fontSize={12}
+                                                    >
+                                                        <tspan
+                                                            x={x}
+                                                            dy="-0.2em"
+                                                            fontWeight={600}
+                                                        >
+                                                            {payload.ticker}
+                                                        </tspan>
+                                                        <tspan x={x} dy="1.3em">
+                                                            {formatCurrency(
+                                                                payload.value,
+                                                            )}
+                                                        </tspan>
+                                                        <tspan
+                                                            x={x}
+                                                            dy="1.3em"
+                                                            fill="var(--muted-foreground)"
+                                                        >
+                                                            {formatPercentage(
+                                                                payload.current_percentage,
+                                                            )}
+                                                        </tspan>
+                                                    </text>
+                                                )}
+                                            >
+                                                {chartAssets.map((asset) => (
+                                                    <Cell
+                                                        key={asset.ticker}
+                                                        fill={asset.chartColor}
+                                                    />
+                                                ))}
+                                            </Pie>
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+                                        Sem valores para exibir.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                )}
 
                 <div className="border-border overflow-hidden rounded-xl border">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
