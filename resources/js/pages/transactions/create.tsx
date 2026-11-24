@@ -30,13 +30,23 @@ type AssetOption = {
 type Props = {
     wallet: WalletOption;
     assets: AssetOption[];
+    prefill: { asset_id: number; quantity: number } | null;
     today: string;
 };
 
-export default function TransactionsCreate({ wallet, assets, today }: Props) {
-    const [assetId, setAssetId] = useState('');
+export default function TransactionsCreate({
+    wallet,
+    assets,
+    prefill,
+    today,
+}: Props) {
+    const [assetId, setAssetId] = useState(
+        prefill ? String(prefill.asset_id) : '',
+    );
     const [type, setType] = useState<'buy' | 'sell'>('buy');
-    const [quantity, setQuantity] = useState('');
+    const [quantity, setQuantity] = useState(
+        prefill ? String(prefill.quantity) : '',
+    );
     useEffect(() => {
         setLayoutProps({
             breadcrumbs: [

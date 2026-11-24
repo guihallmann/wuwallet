@@ -68,7 +68,7 @@ class TransactionManagementTest extends TestCase
         $response = $this->actingAs($client)->get(route('wallets.transactions.create', $wallet));
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn($page) => $page
             ->component('transactions/create')
             ->where('wallet.id', $wallet->getKey())
             ->where('assets.0.id', $asset->getKey())
@@ -77,6 +77,55 @@ class TransactionManagementTest extends TestCase
             ->where('assets.0.current_quantity', 0)
             ->has('assets', 1)
             ->has('today'));
+    }
+
+    public function test_transaction_form_is_prefilled_from_a_buy_suggestion(): void
+    {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = $this->asset();
+        WalletAsset::query()->create([
+            'wallet_id' => $wallet->getKey(),
+            'asset_id' => $asset->getKey(),
+            'target_percentage' => 100,
+        ]);
+
+        $this->actingAs($client)
+            ->get(route('wallets.transactions.create', [$wallet, 'asset_id' => $asset->getKey(), 'quantity' => 300]))
+            ->assertInertia(fn($page) => $page
+                ->where('prefill.asset_id', $asset->getKey())
+                ->where('prefill.quantity', 300));
+    }
+
+    /**
+     * @return array<string, array{bool, int}>
+     */
+    public static function invalidPrefills(): array
+    {
+        return [
+            'asset from another wallet' => [false, 300],
+            'quantity outside a lot' => [true, 150],
+        ];
+    }
+
+    #[DataProvider('invalidPrefills')]
+    public function test_invalid_prefill_is_ignored(bool $assetInWallet, int $quantity): void
+    {
+        $client = $this->client();
+        $wallet = Wallet::factory()->for($client)->create();
+        $asset = $this->asset();
+
+        if ($assetInWallet) {
+            WalletAsset::query()->create([
+                'wallet_id' => $wallet->getKey(),
+                'asset_id' => $asset->getKey(),
+                'target_percentage' => 100,
+            ]);
+        }
+
+        $this->actingAs($client)
+            ->get(route('wallets.transactions.create', [$wallet, 'asset_id' => $asset->getKey(), 'quantity' => $quantity]))
+            ->assertInertia(fn($page) => $page->where('prefill', null));
     }
 
     public function test_search_and_transaction_form_exclude_inactive_and_fractional_assets(): void
@@ -115,7 +164,7 @@ class TransactionManagementTest extends TestCase
 
         $this->actingAs($client)
             ->get(route('wallets.transactions.create', $wallet))
-            ->assertInertia(fn ($page) => $page
+            ->assertInertia(fn($page) => $page
                 ->where('assets.0.id', $tradableAsset->getKey())
                 ->where('assets.0.current_quantity', 150)
                 ->where('wallet.sellableAssetIds', [$tradableAsset->getKey()])
@@ -156,7 +205,7 @@ class TransactionManagementTest extends TestCase
         $response = $this->actingAs($client)->get(route('wallets.transactions.index', $wallet));
 
         $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
+        $response->assertInertia(fn($page) => $page
             ->component('transactions/index')
             ->where('wallet.id', $wallet->getKey())
             ->has('transactions', 2)

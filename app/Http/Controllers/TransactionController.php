@@ -13,6 +13,7 @@ use App\Models\WalletAsset;
 use App\Services\TransactionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -28,7 +29,7 @@ class TransactionController extends Controller
             ->orderByDesc('transaction_date')
             ->orderByDesc('created_at')
             ->get()
-            ->map(fn (Transaction $transaction): array => [
+            ->map(fn(Transaction $transaction): array => [
                 'id' => $transaction->getKey(),
                 'ticker' => $transaction->asset->ticker,
                 'asset_name' => $transaction->asset->name,
@@ -45,17 +46,17 @@ class TransactionController extends Controller
         ]);
     }
 
-    public function create(Wallet $wallet): Response
+    public function create(Request $request, Wallet $wallet): Response
     {
         Gate::authorize('createTransaction', $wallet);
 
         $walletAssets = WalletAsset::query()
             ->where('wallet_id', $wallet->getKey())
-            ->whereHas('asset', fn (Builder $query) => $query->tradable())
+            ->whereHas('asset', fn(Builder $query) => $query->tradable())
             ->with('asset:id,ticker,name,current_price')
             ->get();
         $assets = $walletAssets
-            ->map(fn (WalletAsset $walletAsset): array => [
+            ->map(fn(WalletAsset $walletAsset): array => [
                 'id' => $walletAsset->asset->id,
                 'ticker' => $walletAsset->asset->ticker,
                 'name' => $walletAsset->asset->name,
@@ -65,17 +66,24 @@ class TransactionController extends Controller
             ->sortBy('ticker')
             ->values();
 
+        $prefillAssetId = $request->integer('asset_id');
+        $prefillQuantity = $request->integer('quantity');
+        $canPrefill = $assets->contains('id', $prefillAssetId)
+            && $prefillQuantity >= Asset::LOT_SIZE
+            && $prefillQuantity % Asset::LOT_SIZE === 0;
+
         return Inertia::render('transactions/create', [
             'wallet' => [
                 'id' => $wallet->id,
                 'name' => $wallet->name,
                 'sellableAssetIds' => $walletAssets
-                    ->filter(fn (WalletAsset $walletAsset): bool => $walletAsset->current_quantity >= Asset::LOT_SIZE)
+                    ->filter(fn(WalletAsset $walletAsset): bool => $walletAsset->current_quantity >= Asset::LOT_SIZE)
                     ->pluck('asset_id')
-                    ->map(fn ($id): int => (int) $id)
+                    ->map(fn($id): int => (int) $id)
                     ->all(),
             ],
             'assets' => $assets,
+            'prefill' => $canPrefill ? ['asset_id' => $prefillAssetId, 'quantity' => $prefillQuantity] : null,
             'today' => today()->toDateString(),
         ]);
     }
